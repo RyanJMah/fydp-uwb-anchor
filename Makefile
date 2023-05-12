@@ -6,7 +6,7 @@ DWM3001CDK_PROJ_XML  := $(DWM3001CDK_PROJ_DIR)/DWM3001CDK-QANI-FreeRTOS.emProjec
 DWM3001CDK_BUILD_DIR := $(DWM3001CDK_PROJ_DIR)/Output
 
 TARGET_BIN_DIR := $(DWM3001CDK_BUILD_DIR)/Common/Exe
-TARGET_HEX     := $(TARGET_BIN_DIR)/DWM3001CDK-QANI-FreeRTOS.hex
+TARGET_HEX     := $(TARGET_BIN_DIR)/DWM3001CDK-QANI-FreeRTOS_full.hex
 TARGET_ELF     := $(TARGET_BIN_DIR)/DWM3001CDK-QANI-FreeRTOS.elf
 
 SOFTDEVICE_HEX = ./SDK_BSP/Nordic/NORDIC_SDK_17_1_0/components/softdevice/s113/hex/s113_nrf52_7.2.0_softdevice.hex
@@ -21,6 +21,7 @@ clean:
 
 .PHONY: flash
 flash:
+	$(NRFJPROG) --eraseall
 	$(NRFJPROG) --program $(TARGET_HEX) --verify
 	$(NRFJPROG) --reset
 
@@ -29,6 +30,3 @@ flash_sd:
 	$(NRFJPROG) --program $(SOFTDEVICE_HEX) --verify
 	$(NRFJPROG) --reset
 
-.PHONY: flash_erase
-flash_erase:
-	$(NRFJPROG) --eraseall
