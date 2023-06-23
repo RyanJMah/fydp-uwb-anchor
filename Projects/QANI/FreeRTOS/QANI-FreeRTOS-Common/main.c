@@ -75,7 +75,7 @@
 #include "nrf_sdh.h"
 #endif
 
-#include "socket.h"
+#include "lan.h"
 
 #ifndef ACCESSORY_RANGING_ROLE
 #define ACCESSORY_RANGING_ROLE (1) /**< Responder 0, Initiator 1 */

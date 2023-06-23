@@ -67,6 +67,8 @@
 #include "EventManager.h"
 #include "common_fira.h"
 
+#include "lan.h"
+
 #define OUTPUT_PDOA_ENABLE (1)
 #define STR_SIZE (256)
 
