@@ -284,6 +284,8 @@ static void report_cb(const struct ranging_results *results, void *user_data) {
 
   len += snprintf(&str_result->str[len], str_result->len - len, "}\r\n");
   reporter_instance.print((char*)str_result->str, len);
+
+  LAN_Send( (uint8_t* )str_result->str, len );
 }
 
 //-----------------------------------------------------------------------------

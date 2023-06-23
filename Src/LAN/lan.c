@@ -1,0 +1,112 @@
+#include "macros.h"
+#include "user_ethernet.h"
+#include "user_spi.h"
+#include "w5500.h"
+#include "socket.h"
+#include "deca_dbg.h"
+#include "lan.h"
+
+/*************************************************************
+ * MACROS
+ ************************************************************/
+
+#define SOCK_NUM    ( 1 )
+#define TCP_PORT    ( 6900 )
+
+/*************************************************************
+ * PRIVATE VARIABLES
+ ************************************************************/
+
+static uint8_t g_server_ip[4] = {169, 254, 0, 1};
+static uint16_t g_internal_port = 50000;
+
+
+/*************************************************************
+ * PUBLIC FUNCTIONS
+ ************************************************************/
+
+int16_t LAN_Init(void)
+{
+    int16_t err_code;
+
+    diag_printf("Initializing ethernet...\n");
+
+    spi1_master_init();
+    user_ethernet_init();
+
+    diag_printf("creating socket...\n");
+
+    err_code = socket(SOCK_NUM, Sn_MR_TCP, g_internal_port++, 0);
+    require( err_code == SOCK_OK, exit );
+
+    diag_printf("connecting to server hosted at %d.%d.%d.%d\n", g_server_ip[0], g_server_ip[1], g_server_ip[2], g_server_ip[3]);
+
+    err_code = connect(SOCK_NUM, g_server_ip, TCP_PORT);
+    require( err_code == SOCK_OK, exit );
+
+exit:
+    return err_code;
+}
+
+int16_t LAN_Send(uint8_t* data, uint32_t len)
+{
+    int16_t err_code;
+
+    err_code = send(SOCK_NUM, data, len);
+    require( err_code >= 0, exit );
+
+exit:
+    return err_code;
+}
+
+// not needed yet...
+#if 0
+int16_t LAN_Update(void)
+{
+    int16_t err_code;
+
+    switch ( getSn_SR(SOCK_NUM) )
+    {
+        case SOCK_CLOSED:
+        {
+            close(SOCK_NUM);
+
+            diag_printf("creating socket...\n");
+
+            err_code = socket(SOCK_NUM, Sn_MR_TCP, internal_port++, 0);
+            require( err_code == SOCK_OK, exit );
+
+            break;
+        }
+
+        case SOCK_INIT:
+        {
+            diag_printf("connecting to server hosted at %d.%d.%d.%d\n", g_server_ip[0], g_server_ip[1], g_server_ip[2], g_server_ip[3]);
+
+            err_code = connect(SOCK_NUM, g_server_ip, TCP_PORT);
+            require( err_code == SOCK_OK, exit );
+
+            break;
+        }
+
+        case SOCK_ESTABLISHED:
+        {
+            diag_printf("sending data...\n");
+
+            err_code = send(SOCK_NUM, (uint8_t* )send_msg, sizeof(send_msg));
+            require( err_code >= 0, exit );
+
+            break;
+        }
+
+        default:
+        {
+            diag_printf("you fucked up bro\n");
+            break;
+        }
+    }
+
+exit:
+}
+#endif
+
