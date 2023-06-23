@@ -22,7 +22,7 @@ static SPIConfig_t spi_config_table[2];
 static NRF_SPI_Type *spi_base[2] = {NRF_SPI0, NRF_SPI1};
 static NRF_SPI_Type *SPI;
 
-void spi0_master_init()
+void spi1_master_init()
 {
     SPIConfig_t spi_info = {.Config.Fields.BitOrder = SPI_BITORDER_MSB_LSB,
                         .Config.Fields.Mode     = SPI_MODE3,
@@ -31,7 +31,7 @@ void spi0_master_init()
                         .Pin_MOSI               = W5500_SPI_MOSI_PIN,
                         .Pin_MISO               = W5500_SPI_MISO_PIN,
                         .Pin_CSN                = W5500_SPI_CS_PIN};	
-    spi_master_init(SPI0,&spi_info);
+    spi_master_init(SPI1, &spi_info);
 }
 
 uint32_t* spi_master_init(SPIModuleNumber spi_num, SPIConfig_t *spi_config)

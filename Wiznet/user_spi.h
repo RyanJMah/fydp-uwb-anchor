@@ -145,7 +145,7 @@ bool spi_master_tx(SPIModuleNumber spi_num, uint16_t transfer_size, const uint8_
  */
 bool spi_master_rx(SPIModuleNumber spi_num, uint16_t transfer_size, uint8_t *rx_data);
 
-void	spi0_master_init(void);
+void spi1_master_init(void);
 
 
 /**
