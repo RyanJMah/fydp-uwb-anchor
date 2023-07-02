@@ -20,7 +20,7 @@ clean:
 	rm -rf $(DWM3001CDK_BUILD_DIR)
 
 .PHONY: flash
-flash:
+flash: all
 	$(NRFJPROG) --eraseall
 	$(NRFJPROG) --program $(TARGET_HEX) --verify
 	$(NRFJPROG) --reset

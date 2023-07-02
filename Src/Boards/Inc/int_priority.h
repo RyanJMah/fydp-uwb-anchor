@@ -69,6 +69,9 @@ enum Priorities {
      * osPriorityAboveNormal
      *
      * */
+
+    PRIO_Ethernet           = osPriorityHigh,
+
     PRIO_FlushTask          = osPriorityAboveNormal, /* FlushTask should have higher priority than CalckTask */
     PRIO_CtrlTask           = osPriorityNormal,
     PRIO_StartDefaultTask   = osPriorityLow,

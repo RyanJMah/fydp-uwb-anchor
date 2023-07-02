@@ -1,3 +1,6 @@
+-I./Wiznet
+-I./Wiznet/ioLibrary_Driver/Ethernet
+-I./Wiznet/ioLibrary_Driver/Ethernet/W5500
 -I./Libs/niq/Inc
 -I./Libs/dwt_uwb_driver/Inc
 -I./Libs/uwbstack/uwbstack_lib/include/compat/common

@@ -121,6 +121,12 @@ extern "C" {
 #define DW3000_MISO_Pin     ARDUINO_12_PIN  // DWM3000 shield SPIM1 miso connected to DW1000
 #define DW3000_SPI_IRQ_PRIORITY APP_IRQ_PRIORITY_LOW // 
 
+// Wiznet defs
+#define W5500_SPI_CS_PIN        NRF_GPIO_PIN_MAP(0, 30)
+#define W5500_SPI_CLK_PIN       NRF_GPIO_PIN_MAP(0, 31)
+#define W5500_SPI_MOSI_PIN      NRF_GPIO_PIN_MAP(0, 27)
+#define W5500_SPI_MISO_PIN      NRF_GPIO_PIN_MAP(0, 7)
+
 // UART symbolic constants
 #define UART_0_TX_PIN       TX_PIN_NUMBER           // DWM1001 module pin 20, DEV board name RXD
 #define UART_0_RX_PIN       RX_PIN_NUMBER           // DWM1001 module pin 18, DEV board name TXD
