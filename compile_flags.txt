@@ -1,3 +1,7 @@
+-I./Src/MQTT
+-I./Src/LAN
+-I./coreMQTT/source/include
+-I./coreMQTT/source/interface
 -I./Wiznet
 -I./Wiznet/ioLibrary_Driver/Ethernet
 -I./Wiznet/ioLibrary_Driver/Ethernet/W5500

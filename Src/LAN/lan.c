@@ -31,7 +31,7 @@ void LAN_Init(void)
     user_ethernet_init();
 }
 
-int16_t LAN_Connect(sock_t sock, uint8_t addr[4], uint16_t port)
+int16_t LAN_Connect(sock_t sock, ipv4_addr_t addr, uint16_t port)
 {
     int16_t err_code;
 
@@ -42,12 +42,12 @@ int16_t LAN_Connect(sock_t sock, uint8_t addr[4], uint16_t port)
 
     diag_printf(
             "connecting to server hosted at %d.%d.%d.%d\n",
-            addr[0],
-            addr[1],
-            addr[2],
-            addr[3] );
+            addr.bytes[0],
+            addr.bytes[1],
+            addr.bytes[2],
+            addr.bytes[3] );
 
-    err_code = connect(sock, addr, port);
+    err_code = connect(sock, addr.bytes, port);
     require( err_code == SOCK_OK, exit );
 
 exit:

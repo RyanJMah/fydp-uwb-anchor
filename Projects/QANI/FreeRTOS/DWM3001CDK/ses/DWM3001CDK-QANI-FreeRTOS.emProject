@@ -314,6 +314,11 @@
         <file file_name="../../../../../Src/LAN/lan.c" />
       </folder>
 
+      <folder Name="MQTT">
+        <file file_name="../../../../../Src/MQTT/mqtt_client.c" />
+        <file file_name="../../../../../Src/MQTT/transport_interface.c" />
+      </folder>
+
       <folder Name="Apps">
         <folder Name="Src">
           <folder Name="reporter">
