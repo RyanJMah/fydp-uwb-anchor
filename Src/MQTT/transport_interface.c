@@ -20,26 +20,23 @@ static NetworkContext_t g_network_ctx;
 /*************************************************************
  * PRIVATE FUNCTIONS
  ************************************************************/
-static int32_t transport_recv(
-                        NetworkContext_t* ctx,
-                        void* buff,
-                        size_t buff_size )
+static int32_t transport_recv( NetworkContext_t* ctx,
+                               void* buff,
+                               size_t buff_size )
 {
     return LAN_Recv(ctx->sock, buff, buff_size);
 }
 
-static int32_t transport_send(
-                        NetworkContext_t* ctx,
-                        const void* buff,
-                        size_t len )
+static int32_t transport_send( NetworkContext_t* ctx,
+                               const void* buff,
+                               size_t len )
 {
     return LAN_Send(ctx->sock, (uint8_t* )buff, len);
 }
 
-static int16_t NetworkContext_Init(
-                        NetworkContext_t* ctx,
-                        ipv4_addr_t server_addr,
-                        uint32_t server_port )
+static int16_t NetworkContext_Init( NetworkContext_t* ctx,
+                                    ipv4_addr_t server_addr,
+                                    uint32_t server_port )
 {
     ctx->sock = MQTT_SOCK_NUM;
 
@@ -49,10 +46,9 @@ static int16_t NetworkContext_Init(
 /*************************************************************
  * PUBLIC FUNCTIONS
  ************************************************************/
-int16_t TransportInterface_Init(
-                        TransportInterface_t* interface,
-                        ipv4_addr_t broker_addr,
-                        uint32_t    broker_port )
+int16_t TransportInterface_Init( TransportInterface_t* interface,
+                                 ipv4_addr_t broker_addr,
+                                 uint32_t    broker_port )
 {
     int16_t err_code;
 

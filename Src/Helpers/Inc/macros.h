@@ -3,6 +3,9 @@
 #define UNUSED          __attribute__((unused))
 #define ALWAYS_INLINE   inline __attribute__((always_inline))
 
+#define STR_IMPL_(x) #x      // stringify argument
+#define STR(x) STR_IMPL_(x)  // indirection to expand argument macros
+
 // Assert macros from: https://github.com/apple/darwin-xnu/blob/main/EXTERNAL_HEADERS/AssertMacros.h
 #define require_noerr(err_code, exception_label)        \
     do                                                  \

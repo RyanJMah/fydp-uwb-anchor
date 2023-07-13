@@ -49,7 +49,9 @@
  *
  */
 
-const char ProjectName[] = "DWM3001CDK - Qorvo Apple Nearby Interaction - FreeRTOS";
-const char BoardName[] = "DWM3001CDK";
-const char OsName[] = "FreeRTOS";
-const char ApplicationName[] = "Nearby Interaction";
+#include "anchor_config.h"
+
+const char ProjectName[]     = PROJECT_NAME_;
+const char BoardName[]       = BOARD_NAME_;
+const char OsName[]          = OS_NAME_;
+const char ApplicationName[] = APPLICATION_NAME_;
