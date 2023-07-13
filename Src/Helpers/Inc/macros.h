@@ -1,6 +1,7 @@
 #pragma once
 
-#define UNUSED  __attribute__((unused))
+#define UNUSED          __attribute__((unused))
+#define ALWAYS_INLINE   inline __attribute__((always_inline))
 
 // require_noerr macro taken from: https://github.com/apple/darwin-xnu/blob/main/EXTERNAL_HEADERS/AssertMacros.h
 #define require_noerr(err_code, exception_label)        \

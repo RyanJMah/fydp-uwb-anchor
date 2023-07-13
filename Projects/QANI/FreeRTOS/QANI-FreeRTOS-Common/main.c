@@ -150,15 +150,7 @@ int main(void) {
     snprintf(advertising_name, sizeof(advertising_name), "%s (%08X)", (char*)BoardName, (unsigned int)NRF_FICR->DEVICEADDR[0]);
     ble_init(advertising_name);
 
-    if ( LAN_Init() != SOCK_OK )
-    {
-        diag_printf("something is stupid\n");
-
-        while (1)
-        {
-
-        }
-    }
+    LAN_Init();
 
     EventManagerInit();
     BoardInit();

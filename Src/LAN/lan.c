@@ -9,54 +9,59 @@
 /*************************************************************
  * MACROS
  ************************************************************/
-
-#define SOCK_NUM    ( 1 )
-#define TCP_PORT    ( 6900 )
+// #define SOCK_NUM    ( 1 )
+// #define TCP_PORT    ( 6900 )
 
 /*************************************************************
  * PRIVATE VARIABLES
  ************************************************************/
-
-static uint8_t g_server_ip[4] = {169, 254, 0, 1};
 static uint16_t g_internal_port = 50000;
 
+// static uint8_t g_server_ip[4] = {169, 254, 0, 1};
 
 /*************************************************************
  * PUBLIC FUNCTIONS
  ************************************************************/
 
-int16_t LAN_Init(void)
+void LAN_Init(void)
 {
-    int16_t err_code;
-
     diag_printf("Initializing ethernet...\n");
 
     spi1_master_init();
     user_ethernet_init();
+}
+
+int16_t LAN_Connect(sock_t sock, uint8_t addr[4], uint16_t port)
+{
+    int16_t err_code;
 
     diag_printf("creating socket...\n");
 
-    err_code = socket(SOCK_NUM, Sn_MR_TCP, g_internal_port++, 0);
+    err_code = socket( sock, Sn_MR_TCP, g_internal_port++, 0 );
     require( err_code == SOCK_OK, exit );
 
-    diag_printf("connecting to server hosted at %d.%d.%d.%d\n", g_server_ip[0], g_server_ip[1], g_server_ip[2], g_server_ip[3]);
+    diag_printf(
+            "connecting to server hosted at %d.%d.%d.%d\n",
+            addr[0],
+            addr[1],
+            addr[2],
+            addr[3] );
 
-    err_code = connect(SOCK_NUM, g_server_ip, TCP_PORT);
+    err_code = connect(sock, addr, port);
     require( err_code == SOCK_OK, exit );
 
 exit:
     return err_code;
 }
 
-int16_t LAN_Send(uint8_t* data, uint32_t len)
+int32_t LAN_Send(sock_t sock, uint8_t* data, uint32_t len)
 {
-    int16_t err_code;
+    return send(sock, data, len);
+}
 
-    err_code = send(SOCK_NUM, data, len);
-    require( err_code >= 0, exit );
-
-exit:
-    return err_code;
+int32_t LAN_Recv(sock_t sock, uint8_t* out_data, uint32_t len)
+{
+    return recv(sock, out_data, len);
 }
 
 // not needed yet...
