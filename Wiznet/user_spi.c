@@ -9,12 +9,12 @@
  * the file.
  *
  */
-#include "user_spi.h"
 #include <string.h>
+#include "macros.h"
+#include "user_spi.h"
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
 #include "bsp.h"
-
 #include "custom_board.h"
 
 
@@ -110,7 +110,7 @@ bool spi_master_tx_rx(SPIModuleNumber spi_num, uint16_t transfer_size, const uin
 
 bool spi_master_tx(SPIModuleNumber spi_num, uint16_t transfer_size, const uint8_t *tx_data)
 {
-    volatile uint32_t dummyread;
+    volatile uint32_t dummyread UNUSED;
 
     if(tx_data == 0)
     {

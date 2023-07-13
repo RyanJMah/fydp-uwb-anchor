@@ -1,4 +1,5 @@
 #include <string.h>
+#include "macros.h"
 #include "cmsis_os.h"
 #include "core_mqtt.h"
 #include "mqtt_client.h"
@@ -11,11 +12,11 @@
 /*************************************************************
  * GLOBAL VARIABLES
  ************************************************************/
-static MQTTContext_t        g_mqttContext;
+static MQTTContext_t        g_mqtt_ctx;
 static TransportInterface_t g_transport;
 
-static MQTTFixedBuffer_t    g_fixedBuffer;
-static uint8_t              g_rx_buffer[ MQTT_CLIENT_RX_BUFF_SIZE ];
+static MQTTFixedBuffer_t    g_fixed_buffer;
+static uint8_t              g_buffer[ MQTT_CLIENT_RX_BUFF_SIZE ];
 
 /*************************************************************
  * PRIVATE FUNCTIONS
@@ -26,41 +27,45 @@ static uint32_t getTimeStampMs()
 }
 
 // Callback function for receiving packets.
-void eventCallback(
-     MQTTContext_t * pContext,
-     MQTTPacketInfo_t * pPacketInfo,
-     MQTTDeserializedInfo_t * pDeserializedInfo
-);
+static void eventCallback(
+                    MQTTContext_t * pContext,
+                    MQTTPacketInfo_t * pPacketInfo,
+                    MQTTDeserializedInfo_t * pDeserializedInfo )
+{
 
-// Network send.
-int32_t networkSend( NetworkContext_t * pContext, const void * pBuffer, size_t bytes );
-
-// Network receive.
-int32_t networkRecv( NetworkContext_t * pContext, void * pBuffer, size_t bytes );
+}
 
 /*************************************************************
  * PUBLIC FUNCTIONS
  ************************************************************/
-void MqttClient_Init(void)
+MqttRetCode_t MqttClient_Init(ipv4_addr_t broker_addr, uint32_t broker_port)
 {
-    // Clear context.
-    memset( ( void * ) &mqttContext, 0x00, sizeof( MQTTContext_t ) );
+    MqttRetCode_t err_code;
+    int16_t       sock_err_code;
 
-    // Set transport interface members.
-    transport.pNetworkContext = &someTransportContext;
-    transport.send = networkSend;
-    transport.recv = networkRecv;
+    // Clear context.
+    memset( &g_mqtt_ctx, 0x00, sizeof( MQTTContext_t ) );
+
+    // Initialize transport interface
+    sock_err_code = TransportInterface_Init(&g_transport, broker_addr, broker_port);
+    require_action( sock_err_code == SOCK_OK, exit, err_code = MQTT_SOCK_INTERNAL_ERR );
 
     // Set buffer members.
-    fixedBuffer.pBuffer = buffer;
-    fixedBuffer.size = 1024;
+    g_fixed_buffer.pBuffer = g_buffer;
+    g_fixed_buffer.size    = sizeof(g_buffer);
 
-    status = MQTT_Init( &mqttContext, &transport, getTimeStampMs, eventCallback, &fixedBuffer );
+    err_code = MQTT_Init(
+                    &g_mqtt_ctx,
+                    &g_transport,
+                    getTimeStampMs,
+                    eventCallback,
+                    &g_fixed_buffer );
+    require_noerr(err_code, exit);
 
-    if( status == MQTTSuccess )
-    {
-         // Do something with mqttContext. The transport and fixedBuffer structs were
-         // copied into the context, so the original structs do not need to stay in scope.
-         // However, the memory pointed to by the fixedBuffer.pBuffer must remain in scope.
-    }
+    // Do something with mqttContext. The transport and fixedBuffer structs were
+    // copied into the context, so the original structs do not need to stay in scope.
+    // However, the memory pointed to by the fixedBuffer.pBuffer must remain in scope.
+
+exit:
+    return err_code;
 }
