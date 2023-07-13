@@ -65,21 +65,43 @@ extern "C" {
 #define LEDS_NUMBER    2
 
 //If AOA chip is populated on the PCB without second antenna, this shall be set to (1)
-#define AOA_CHIP_ON_NON_AOA_PCB (0)
+#define AOA_CHIP_ON_NON_AOA_PCB     ( 0 )
 
-#define LED_1          NRF_GPIO_PIN_MAP(0, 30)  //D9 on the schematics
-#define LED_2          NRF_GPIO_PIN_MAP(0, 2)  //D10 on the schematics
-#define LED_START      LED_1
-#define LED_STOP       LED_2
+// We fucked up soldering the LED Pins
+#define FUCKED_UP_LEDS              ( 1 )
 
-#define LEDS_ACTIVE_STATE 0
+#if FUCKED_UP_LEDS
+    #define LED_1          PIN_DISCONNECTED
+    #define LED_2          PIN_DISCONNECTED
+    #define LED_START      LED_1
+    #define LED_STOP       LED_2
+    
+    #define LEDS_ACTIVE_STATE 0
+    
+    #define LEDS_LIST { LED_1, LED_2 }
+    
+    #define LEDS_INV_MASK  LEDS_MASK
+#else
+    #define LED_1          NRF_GPIO_PIN_MAP(0, 30)  //D9 on the schematics
+    #define LED_2          NRF_GPIO_PIN_MAP(0, 2)  //D10 on the schematics
+    #define LED_START      LED_1
+    #define LED_STOP       LED_2
+    
+    #define LEDS_ACTIVE_STATE 0
+    
+    #define LEDS_LIST { LED_1, LED_2 }
+    
+    #define LEDS_INV_MASK  LEDS_MASK
+#endif
 
-#define LEDS_LIST { LED_1, LED_2 }
+#if FUCKED_UP_LEDS
+    #define BSP_LED_0       PIN_DISCONNECTED
+    #define BSP_LED_1       PIN_DISCONNECTED
+#else
+    #define BSP_LED_0      LED_1
+    #define BSP_LED_1      LED_2
+#endif
 
-#define LEDS_INV_MASK  LEDS_MASK
-
-#define BSP_LED_0      LED_1
-#define BSP_LED_1      LED_2
 #define BSP_LED_2      PIN_DISCONNECTED
 #define BSP_LED_3      PIN_DISCONNECTED
 
