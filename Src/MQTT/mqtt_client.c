@@ -120,3 +120,8 @@ MqttRetCode_t MqttClient_Init(void)
 exit:
     return err_code;
 }
+
+MqttRetCode_t MqttClient_ManageRunLoop(void)
+{
+    return MQTT_ProcessLoop(&g_mqtt_ctx);
+}

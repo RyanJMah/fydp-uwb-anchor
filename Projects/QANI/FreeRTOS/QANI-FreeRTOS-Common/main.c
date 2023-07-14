@@ -75,8 +75,7 @@
 #include "nrf_sdh.h"
 #endif
 
-#include "lan.h"
-#include "mqtt_client.h"
+#include "lan_task.h"
 
 #ifndef ACCESSORY_RANGING_ROLE
 #define ACCESSORY_RANGING_ROLE (1) /**< Responder 0, Initiator 1 */
@@ -151,13 +150,7 @@ int main(void) {
     snprintf(advertising_name, sizeof(advertising_name), "%s (%08X)", (char*)BoardName, (unsigned int)NRF_FICR->DEVICEADDR[0]);
     ble_init(advertising_name);
 
-    LAN_Init();
-
-    MqttRetCode_t err_code = MqttClient_Init();
-    if ( err_code != MQTT_OK )
-    {
-        diag_printf("FAILED TO CONNECT TO BROKER, err_code=%d\n", err_code);
-    }
+    LANTask_Init();
 
     EventManagerInit();
     BoardInit();

@@ -41,3 +41,5 @@ int16_t TransportInterface_Init(
  ************************************************************/
 MqttRetCode_t MqttClient_Init(void);
 
+MqttRetCode_t MqttClient_ManageRunLoop(void);
+
