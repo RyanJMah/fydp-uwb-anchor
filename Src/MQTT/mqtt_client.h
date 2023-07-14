@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+#include "transport_interface.h"
 #include "lan.h"
 
 /*************************************************************
@@ -9,7 +11,7 @@
 // Same as MQTTStatus_t but with some more fields
 typedef enum
 {
-    MQTT_SUCCESS = 0,           /**< Function completed successfully. */
+    MQTT_OK = 0,                /**< Function completed successfully. */
     MQTT_BAD_PARAM,             /**< At least one parameter was invalid. */
     MQTT_NO_MEM,                /**< A provided buffer was too small. */
     MQTT_SEND_FAILED,           /**< The transport send function failed. */
@@ -37,3 +39,5 @@ int16_t TransportInterface_Init(
 /*************************************************************
  * PUBLIC FUNCTIONS
  ************************************************************/
+MqttRetCode_t MqttClient_Init(void);
+

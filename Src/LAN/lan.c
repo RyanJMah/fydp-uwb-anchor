@@ -17,8 +17,6 @@
  ************************************************************/
 static uint16_t g_internal_port = 50000;
 
-// static uint8_t g_server_ip[4] = {169, 254, 0, 1};
-
 /*************************************************************
  * PUBLIC FUNCTIONS
  ************************************************************/
@@ -29,6 +27,9 @@ void LAN_Init(void)
 
     spi1_master_init();
     user_ethernet_init();
+
+
+    diag_printf("Ethernet initialized!\n");
 }
 
 int16_t LAN_Connect(sock_t sock, ipv4_addr_t addr, uint16_t port)

@@ -1,4 +1,5 @@
 #include <string.h>
+#include "deca_dbg.h"
 #include "macros.h"
 #include "cmsis_os.h"
 #include "core_mqtt.h"
@@ -31,6 +32,11 @@ static MQTTPubAckInfo_t     g_incoming_publishes[ INCOMING_PUBLISH_BUFF_LEN ];
 
 static MQTTConnectInfo_t    g_connection_info;
 
+const ipv4_addr_t g_broker_addr =
+{
+    .bytes = MQTT_BROKER_ADDR
+};
+
 /*************************************************************
  * PRIVATE FUNCTIONS
  ************************************************************/
@@ -50,7 +56,7 @@ static void eventCallback( MQTTContext_t * pContext,
 /*************************************************************
  * PUBLIC FUNCTIONS
  ************************************************************/
-MqttRetCode_t MqttClient_Init(ipv4_addr_t broker_addr, uint32_t broker_port)
+MqttRetCode_t MqttClient_Init(void)
 {
     MqttRetCode_t err_code;
     int16_t       sock_err_code;
@@ -59,7 +65,9 @@ MqttRetCode_t MqttClient_Init(ipv4_addr_t broker_addr, uint32_t broker_port)
     memset( &g_mqtt_ctx, 0x00, sizeof(g_mqtt_ctx) );
 
     // Initialize transport interface...
-    sock_err_code = TransportInterface_Init(&g_transport, broker_addr, broker_port);
+    sock_err_code = TransportInterface_Init( &g_transport,
+                                              g_broker_addr,
+                                              MQTT_BROKER_PORT );
     require_action( sock_err_code == SOCK_OK, exit, err_code = MQTT_SOCK_INTERNAL_ERR );
 
     // Set buffer members.
@@ -73,11 +81,6 @@ MqttRetCode_t MqttClient_Init(ipv4_addr_t broker_addr, uint32_t broker_port)
                           &g_fixed_buffer );
     require_noerr(err_code, exit);
 
-    // Do something with mqttContext. The transport and fixedBuffer structs were
-    // copied into the context, so the original structs do not need to stay in scope.
-    // However, the memory pointed to by the fixedBuffer.pBuffer must remain in scope.
-
-    // Allow for qos > 0
     err_code = MQTT_InitStatefulQoS( &g_mqtt_ctx,
                                      g_outgoing_publishes,
                                      OUTGOING_PUBLISH_BUFF_LEN,
@@ -110,6 +113,9 @@ MqttRetCode_t MqttClient_Init(ipv4_addr_t broker_addr, uint32_t broker_port)
                              NULL,
                              CONNACK_RECV_TIMEOUT_MS,
                              &session_present );
+    require_noerr(err_code, exit);
+
+    diag_printf("Successfully connected to MQTT broker...\n");
 
 exit:
     return err_code;

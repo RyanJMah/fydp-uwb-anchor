@@ -76,6 +76,7 @@
 #endif
 
 #include "lan.h"
+#include "mqtt_client.h"
 
 #ifndef ACCESSORY_RANGING_ROLE
 #define ACCESSORY_RANGING_ROLE (1) /**< Responder 0, Initiator 1 */
@@ -151,6 +152,12 @@ int main(void) {
     ble_init(advertising_name);
 
     LAN_Init();
+
+    MqttRetCode_t err_code = MqttClient_Init();
+    if ( err_code != MQTT_OK )
+    {
+        diag_printf("FAILED TO CONNECT TO BROKER, err_code=%d\n", err_code);
+    }
 
     EventManagerInit();
     BoardInit();

@@ -8,8 +8,8 @@
 // W5500 has 8 HW sockets
 #define W5500_NUM_SOCKETS   ( 8 )
 
-#define MQTT_SOCK_NUM       ( 0 )
-#define MDNS_SOCK_NUM       ( 1 )
+#define MQTT_SOCK_NUM       ( 1 )
+#define MDNS_SOCK_NUM       ( 2 )
 
 /*************************************************************
  * TYPE DEFINITIONS
