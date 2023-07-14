@@ -67,7 +67,7 @@
 #include "EventManager.h"
 #include "common_fira.h"
 
-#include "lan_task.h"
+#include "app_mqtt.h"
 
 #define OUTPUT_PDOA_ENABLE (1)
 #define STR_SIZE (256)
@@ -192,7 +192,7 @@ static float convert_aoa_2pi_q16_to_deg(int16_t aoa_2pi_q16)
 /*
  * @brief   Gets the ranging results send it over MQTT
  * */
-#if 0
+#if 1
 static void report_cb(const struct ranging_results *results, void *user_data) {
     struct ranging_measurements *rm;
 
@@ -204,12 +204,17 @@ static void report_cb(const struct ranging_results *results, void *user_data) {
     for (int i = 0; i < results->n_measurements; i++) 
     {
         rm = (struct ranging_measurements *)&results->measurements[i];
-        LANTask_PushToTelemetry(rm);
+
+        MqttRetCode_t err_code = TelemetryData_Publish(rm);
+        if ( err_code != MQTT_OK )
+        {
+            diag_printf("TelemetryData_Publish FAILED: err_code=%d\n", err_code);
+        }
     }
 }
 #endif
 
-#if 1
+#if 0
 /*
  * @brief   Gets the ranging results and print it
  * */
