@@ -9,7 +9,7 @@
 /*************************************************************
  * MACROS
  ************************************************************/
-#define MQTT_CLIENT_RX_BUFF_SIZE    ( 1024*2 )
+#define MQTT_CLIENT_BUFF_SIZE       ( 1024*5 )
 
 #define OUTGOING_PUBLISH_BUFF_LEN   ( 10 )
 #define INCOMING_PUBLISH_BUFF_LEN   ( 10 )
@@ -25,7 +25,7 @@ static MQTTContext_t        g_mqtt_ctx;
 static TransportInterface_t g_transport;
 
 static MQTTFixedBuffer_t    g_fixed_buffer;
-static uint8_t              g_buffer[ MQTT_CLIENT_RX_BUFF_SIZE ];
+static uint8_t              g_buffer[ MQTT_CLIENT_BUFF_SIZE ];
 
 static MQTTPubAckInfo_t     g_outgoing_publishes[ OUTGOING_PUBLISH_BUFF_LEN ];
 static MQTTPubAckInfo_t     g_incoming_publishes[ INCOMING_PUBLISH_BUFF_LEN ];
@@ -124,4 +124,19 @@ exit:
 MqttRetCode_t MqttClient_ManageRunLoop(void)
 {
     return MQTT_ProcessLoop(&g_mqtt_ctx);
+}
+
+MqttRetCode_t MqttClient_Publish(char* topic, void* data, uint32_t len)
+{
+    MQTTPublishInfo_t publish_info;
+
+    publish_info.qos             = MQTTQoS0;
+    publish_info.pTopicName      = topic;
+    publish_info.topicNameLength = strlen(topic);
+    publish_info.pPayload        = data;
+    publish_info.payloadLength   = len;
+
+    uint16_t pkt_id = MQTT_GetPacketId(&g_mqtt_ctx);
+
+    return MQTT_Publish(&g_mqtt_ctx, &publish_info, pkt_id);
 }

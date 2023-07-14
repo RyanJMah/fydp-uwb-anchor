@@ -53,6 +53,9 @@
 //! THE POSSIBILITY OF SUCH DAMAGE.
 //
 //*****************************************************************************
+#include "cmsis_os.h"
+#include "deca_dbg.h"
+#include "lan_task.h"
 #include "socket.h"
 
 //M20150401 : Typing Error
@@ -367,17 +370,11 @@ int32_t send(uint8_t sn, uint8_t * buf, uint16_t len)
     return (int32_t)len;
 }
 
-
 int32_t recv(uint8_t sn, uint8_t * buf, uint16_t len)
 {
     uint8_t  tmp = 0;
     uint16_t recvsize = 0;
-//A20150601 : For integarating with W5300
-#if    _WIZCHIP_ == 5300
-    uint8_t head[2];
-    uint16_t mr;
-#endif
-//
+
     CHECK_SOCKNUM();
     CHECK_SOCKMODE(Sn_MR_TCP);
     CHECK_SOCKDATA();
@@ -385,95 +382,49 @@ int32_t recv(uint8_t sn, uint8_t * buf, uint16_t len)
     recvsize = getSn_RxMAX(sn);
     if(recvsize < len) len = recvsize;
         
-//A20150601 : For Integrating with W5300
-#if _WIZCHIP_ == 5300
-    //sock_pack_info[sn] = PACK_COMPLETED;     // for clear        
-    if(sock_remained_size[sn] == 0)
+    while(1)
     {
-#endif
-//
-        while(1)
+        recvsize = getSn_RX_RSR(sn);
+        tmp = getSn_SR(sn);
+        if (tmp != SOCK_ESTABLISHED)
         {
-            recvsize = getSn_RX_RSR(sn);
-            tmp = getSn_SR(sn);
-            if (tmp != SOCK_ESTABLISHED)
+            if(tmp == SOCK_CLOSE_WAIT)
             {
-                if(tmp == SOCK_CLOSE_WAIT)
-                {
-                    if(recvsize != 0) break;
-                    else if(getSn_TX_FSR(sn) == getSn_TxMAX(sn))
-                    {
-                        close(sn);
-                        return SOCKERR_SOCKSTATUS;
-                    }
-                }
-                else
+                if(recvsize != 0) break;
+                else if(getSn_TX_FSR(sn) == getSn_TxMAX(sn))
                 {
                     close(sn);
                     return SOCKERR_SOCKSTATUS;
                 }
             }
-            if ( (sock_io_mode & (1<<sn)) && (recvsize == 0) )
-            {
-                return SOCK_BUSY;
-            }
-
-            if ( recvsize != 0 )
-            {
-                break;
-            }
-        };
-#if _WIZCHIP_ == 5300
-    }
-#endif
-
-//A20150601 : For integrating with W5300
-#if _WIZCHIP_ == 5300
-    if((sock_remained_size[sn] == 0) || (getSn_MR(sn) & Sn_MR_ALIGN))
-    {
-        mr = getMR();
-        if((getSn_MR(sn) & Sn_MR_ALIGN)==0)
-        {
-            wiz_recv_data(sn,head,2);
-            if(mr & MR_FS)
-                recvsize = (((uint16_t)head[1]) << 8) | ((uint16_t)head[0]);
             else
-                recvsize = (((uint16_t)head[0]) << 8) | ((uint16_t)head[1]);
-            sock_pack_info[sn] = PACK_FIRST;
+            {
+                close(sn);
+                return SOCKERR_SOCKSTATUS;
+            }
         }
-        sock_remained_size[sn] = recvsize;
-    }
-    if(len > sock_remained_size[sn]) len = sock_remained_size[sn];
-    recvsize = len;    
-    if(sock_pack_info[sn] & PACK_FIFOBYTE)
-    {
-        *buf = sock_remained_byte[sn];
-        buf++;
-        sock_pack_info[sn] &= ~(PACK_FIFOBYTE);
-        recvsize -= 1;
-        sock_remained_size[sn] -= 1;
-    }
-    if(recvsize != 0)
-    {
-        wiz_recv_data(sn, buf, recvsize);
-        setSn_CR(sn,Sn_CR_RECV);
-        while(getSn_CR(sn));
-    }
-    sock_remained_size[sn] -= recvsize;
-    if(sock_remained_size[sn] != 0)
-    {
-        sock_pack_info[sn] |= PACK_REMAINED;
-        if(recvsize & 0x1) sock_pack_info[sn] |= PACK_FIFOBYTE;
-    }
-    else sock_pack_info[sn] = PACK_COMPLETED;
-    if(getSn_MR(sn) & Sn_MR_ALIGN) sock_remained_size[sn] = 0;
-    //len = recvsize;
-#else    
+        if ( (sock_io_mode & (1<<sn)) && (recvsize == 0) )
+        {
+            return SOCK_BUSY;
+        }
+
+        if ( recvsize != 0 )
+        {
+            break;
+        }
+
+        // diag_printf("fuck this shit");
+        if ( osKernelRunning() )
+        {
+            osDelay(1);
+            // osSignalWait(0x01, 1000);
+        }
+    };
+
     if(recvsize < len) len = recvsize;    
     wiz_recv_data(sn, buf, len);
     setSn_CR(sn,Sn_CR_RECV);
     while(getSn_CR(sn));
-#endif
       
     //M20150409 : Explicit Type Casting
     //return len;

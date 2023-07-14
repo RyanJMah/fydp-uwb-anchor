@@ -1,12 +1,14 @@
 #pragma once
 
 #include <stdint.h>
+#include "cmsis_os.h"
 #include "fira_helper.h"
 
 /*************************************************************
  * MACROS
  ************************************************************/
-#define LAN_TASK_PERIODICITY_MS    ( 100 )
+#define LAN_TASK_PERIODICITY_MS     ( 100 )
+#define LAN_TASK_PRIORITY           ( osPriorityBelowNormal )
 
 /*************************************************************
  * TYPE DEFINITIONS
@@ -15,6 +17,8 @@ typedef struct
 {
     uint8_t rssi;
     uint8_t status;
+
+    uint32_t timestamp;
 
     int32_t distance_mm;
 

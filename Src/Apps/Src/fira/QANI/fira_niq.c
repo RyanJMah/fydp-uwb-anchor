@@ -190,9 +190,29 @@ static float convert_aoa_2pi_q16_to_deg(int16_t aoa_2pi_q16)
 }
 
 /*
+ * @brief   Gets the ranging results send it over MQTT
+ * */
+#if 0
+static void report_cb(const struct ranging_results *results, void *user_data) {
+    struct ranging_measurements *rm;
+
+    if (results->stopped_reason != 0xFF)
+    {
+        return;
+    }
+
+    for (int i = 0; i < results->n_measurements; i++) 
+    {
+        rm = (struct ranging_measurements *)&results->measurements[i];
+        LANTask_PushToTelemetry(rm);
+    }
+}
+#endif
+
+#if 1
+/*
  * @brief   Gets the ranging results and print it
  * */
-
 static void report_cb(const struct ranging_results *results, void *user_data) {
   static bool notify = true;
   
@@ -218,6 +238,7 @@ static void report_cb(const struct ranging_results *results, void *user_data) {
     }
  
     rm = (struct ranging_measurements *)(&results->measurements[i]);
+    LANTask_PushToTelemetry(rm);
 
     len += snprintf(&str_result->str[len], str_result->len - len,
                     "{\"Addr\":\"0x%04x\",\"Status\":\"%s\"",
@@ -287,9 +308,9 @@ static void report_cb(const struct ranging_results *results, void *user_data) {
   len += snprintf(&str_result->str[len], str_result->len - len, "}\r\n");
   reporter_instance.print((char*)str_result->str, len);
 
-  // LANTask_PushToTelemetry(rm);
   // LAN_Send( (uint8_t* )str_result->str, len );
 }
+#endif
 
 //-----------------------------------------------------------------------------
 

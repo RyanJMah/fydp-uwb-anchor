@@ -150,7 +150,6 @@ int main(void) {
     snprintf(advertising_name, sizeof(advertising_name), "%s (%08X)", (char*)BoardName, (unsigned int)NRF_FICR->DEVICEADDR[0]);
     ble_init(advertising_name);
 
-    LANTask_Init();
 
     EventManagerInit();
     BoardInit();
@@ -158,6 +157,8 @@ int main(void) {
         APP_ERROR_HANDLER(NRF_ERROR_RESOURCES);
     }
     DefaultTaskInit();
+
+    LANTask_Init();
    
     // Driver version is available after probing of the DW chip
     const char ver[]    = FULL_VERSION;

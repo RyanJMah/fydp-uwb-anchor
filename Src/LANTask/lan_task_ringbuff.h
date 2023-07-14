@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "macros.h"
+#include "cmsis_os.h"
 #include "lan_task.h"
 
 /*
@@ -62,6 +63,7 @@ ALWAYS_INLINE void RingBuff_Push( RingBuff_t* ringbuff,
 
     telem_data->rssi               = rm->rssi;
     telem_data->status             = rm->status;
+    telem_data->timestamp          = osKernelSysTick();
     telem_data->distance_mm        = rm->distance_mm;
     telem_data->iphone_aoa_2pi_q16 = rm->remote_aoa_azimuth_2pi;
     telem_data->iphone_aoa_fom     = rm->remote_aoa_azimuth_fom;

@@ -30,7 +30,7 @@ void spi1_master_init()
                         .Pin_SCK                = W5500_SPI_CLK_PIN,
                         .Pin_MOSI               = W5500_SPI_MOSI_PIN,
                         .Pin_MISO               = W5500_SPI_MISO_PIN,
-                        .Pin_CSN                = W5500_SPI_CS_PIN};	
+                        .Pin_CSN                = W5500_SPI_CS_PIN};
     spi_master_init(SPI1, &spi_info);
 }
 

@@ -43,3 +43,4 @@ MqttRetCode_t MqttClient_Init(void);
 
 MqttRetCode_t MqttClient_ManageRunLoop(void);
 
+MqttRetCode_t MqttClient_Publish(char* topic, void* data, uint32_t len);
