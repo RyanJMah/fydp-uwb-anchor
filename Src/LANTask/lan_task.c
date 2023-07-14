@@ -11,7 +11,7 @@
 /*************************************************************
  * MACROS
  ************************************************************/
-#define LAN_TASK_STACK_SIZE     ( 1024U )
+#define LAN_TASK_STACK_SIZE     ( 1024U*10 )
 
 // must be a power of two
 #define TELEM_DATA_BUFFER_SIZE  ( 32U )
@@ -62,7 +62,7 @@ static void _LANTask_Main(void const* args UNUSED)
         // If we've gotten here, there is now stuff in the ringbuff...
 
 
-        // MqttClient_ManageRunLoop();
+        MqttClient_ManageRunLoop();
 
         // Yield to other tasks...
         osDelay(LAN_TASK_PERIODICITY_MS);
@@ -98,7 +98,7 @@ void LANTask_Init(void)
         diag_printf("FAILED TO CONNECT TO BROKER, err_code=%d\n", err_code);
     }
 
-    osThreadDef(LANTask, _LANTask_Main, osPriorityAboveNormal, 0, LAN_TASK_STACK_SIZE);
+    osThreadDef(LANTask, _LANTask_Main, osPriorityNormal, 0, LAN_TASK_STACK_SIZE);
     osThreadId id = osThreadCreate( osThread(LANTask), NULL );
 
     if ( id == NULL )

@@ -6,9 +6,11 @@ endif
 
 ifeq ($(HOST_OS),Windows)
 	EM_BUILD := 'C:\Program Files\SEGGER\SEGGER Embedded Studio for ARM 5.68\bin\emBuild.exe'
+	SIZE     := 'C:\Program Files\SEGGER\SEGGER Embedded Studio for ARM 5.68\gcc\arm-none-eabi\bin\arm-none-eabi-size'
 	RMDIR    := del /f /s /q
 else
 	EM_BUILD := /Applications/SEGGER\ Embedded\ Studio\ for\ ARM\ 5.68/bin/emBuild
+	SIZE     := /Applications/SEGGER\ Embedded\ Studio\ for\ ARM\ 5.68/gcc/arm-none-eabi/bin/arm-none-eabi-size
 	RMDIR    := rm -rf
 endif
 
@@ -32,6 +34,7 @@ endif
 .PHONY: all
 all:
 	@$(EM_BUILD) -echo -config "Common" $(DWM3001CDK_PROJ_XML)
+	@$(SIZE) $(TARGET_ELF)
 
 .PHONY: clean
 clean:
