@@ -54,6 +54,7 @@
 //
 //*****************************************************************************
 #include "cmsis_os.h"
+#include "lan_task.h"
 #include "deca_dbg.h"
 #include "lan_task.h"
 #include "socket.h"
@@ -413,11 +414,10 @@ int32_t recv(uint8_t sn, uint8_t * buf, uint16_t len)
             break;
         }
 
-        // diag_printf("fuck this shit");
         if ( osKernelRunning() )
         {
+            // osSignalWait(LAN_TASK_RECV_INTERRUPT_SIGNAL, osWaitForever);
             osDelay(1);
-            // osSignalWait(0x01, 1000);
         }
     };
 

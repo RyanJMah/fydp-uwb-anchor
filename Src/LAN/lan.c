@@ -53,29 +53,49 @@ static ALWAYS_INLINE void _reset_via_reset_pin(void)
     nrf_drv_gpiote_out_clear(W5500_RESET_PIN);
     nrf_delay_ms(100);
     nrf_drv_gpiote_out_set(W5500_RESET_PIN);
-    nrf_delay_ms(100);
+    nrf_delay_ms(1000);
 }
 
-// static ALWAYS_INLINE void _init_recv_interrupt(nrfx_gpiote_evt_handler_t isr_func)
-// {
-//     // configure interrupt on falling edge
-//     nrf_drv_gpiote_in_config_t int_pin_config = GPIOTE_CONFIG_IN_SENSE_HITOLO(true);
-//     if ( nrf_drv_gpiote_in_init( W5500_INTERRUPT_PIN,
-//                                  &int_pin_config,
-//                                  isr_func ) != NRF_SUCCESS )
-//     {
-//         diag_printf("FAILED TO INITIALIZE W5500 INTERRUPT PIN\n");
-//     }
-//     nrf_drv_gpiote_in_event_enable(W5500_INTERRUPT_PIN, true);
-   
-//     // configure interrupts on MQTT socket
-//     setSIMR(1 << MQTT_SOCK_NUM);
+static ALWAYS_INLINE void _deinit_reset_pin(void)
+{
+    nrf_drv_gpiote_out_uninit(W5500_RESET_PIN);
+}
 
-//     if ( getSIMR() != (1 << MQTT_SOCK_NUM) )
-//     {
-//         diag_printf("FAILED TO ENABLE SOCKET INTERRUPT ON W5500\n");
-//     }
-// }
+static ALWAYS_INLINE void _init_interrupts(nrfx_gpiote_evt_handler_t isr_func)
+{
+    // configure interrupt on falling edge
+    nrf_drv_gpiote_in_config_t int_pin_config = GPIOTE_CONFIG_IN_SENSE_HITOLO(true);
+    if ( nrf_drv_gpiote_in_init( W5500_INTERRUPT_PIN,
+                                 &int_pin_config,
+                                 isr_func ) != NRF_SUCCESS )
+    {
+        diag_printf("FAILED TO INITIALIZE W5500 INTERRUPT PIN\n");
+    }
+    nrf_drv_gpiote_in_event_enable(W5500_INTERRUPT_PIN, true);
+
+    // disable global interrupts...
+    setIMR(0b1111 << 4);
+    if ( getIMR() != (0b1111 << 4) )
+    {
+        diag_printf("FAILED TO DISABLE GLOBAL INTERRUPTS ON W5500\n");
+    }
+
+    // configure interrupts on MQTT socket
+    setSIMR(1 << MQTT_SOCK_NUM);
+    if ( getSIMR() != (1 << MQTT_SOCK_NUM) )
+    {
+        diag_printf("FAILED TO ENABLE SOCKET INTERRUPT ON W5500\n");
+    }
+
+    // Enable recv interrupt
+    setSn_IMR(MQTT_SOCK_NUM, 1 << 2);
+    if ( getSn_IMR(MQTT_SOCK_NUM) != 1 << 2 )
+    {
+        diag_printf("FAILED TO ENABLE RECT SOCKET INTERRUPT ON W5500\n");
+    }
+
+    nrf_delay_ms(100);
+}
 
 /*************************************************************
  * PUBLIC FUNCTIONS
@@ -91,13 +111,14 @@ void LAN_Init(nrfx_gpiote_evt_handler_t isr_func)
     nrf_drv_gpiote_init();
 
     // Reset the chip...
-    _init_reset_pin();
-    _reset_via_reset_pin();
+    // _init_reset_pin();
+    // _reset_via_reset_pin();
+    // _deinit_reset_pin();
 
     spi1_master_init();
     user_ethernet_init();
 
-    // _init_recv_interrupt();
+    // _init_interrupts( isr_func );
 
     diag_printf("Ethernet initialized!\n");
 }

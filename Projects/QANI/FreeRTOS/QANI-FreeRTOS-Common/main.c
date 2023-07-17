@@ -159,7 +159,7 @@ int main(void) {
     DefaultTaskInit();
 
     LANTask_Init();
-   
+
     // Driver version is available after probing of the DW chip
     const char ver[]    = FULL_VERSION;
     const char *drv_ver = dwt_version_string();
