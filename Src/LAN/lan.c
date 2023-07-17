@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include "cmsis_os.h"
 #include "macros.h"
+#include "int_priority.h"
 #include "custom_board.h"
 #include "nrf_delay.h"
 #include "nrf_drv_gpiote.h"
@@ -63,6 +64,9 @@ static ALWAYS_INLINE void _deinit_reset_pin(void)
 
 static ALWAYS_INLINE void _init_interrupts(nrfx_gpiote_evt_handler_t isr_func)
 {
+    // set interrupt priority
+    NVIC_SetPriority(GPIOTE_IRQn, PRIO_GPIOTE_IRQn);
+
     // configure interrupt on falling edge
     nrf_drv_gpiote_in_config_t int_pin_config = GPIOTE_CONFIG_IN_SENSE_HITOLO(true);
     if ( nrf_drv_gpiote_in_init( W5500_INTERRUPT_PIN,
@@ -118,7 +122,7 @@ void LAN_Init(nrfx_gpiote_evt_handler_t isr_func)
     spi1_master_init();
     user_ethernet_init();
 
-    // _init_interrupts( isr_func );
+    _init_interrupts( isr_func );
 
     diag_printf("Ethernet initialized!\n");
 }

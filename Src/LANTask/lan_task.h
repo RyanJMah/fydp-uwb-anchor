@@ -8,7 +8,8 @@
  ************************************************************/
 #define LAN_TASK_PERIODICITY_MS         ( 5000 )
 #define LAN_TASK_PRIORITY               ( osPriorityLow )
-#define LAN_TASK_RECV_INTERRUPT_SIGNAL  ( 0x01 )
+
+#define RECV_TIMEOUT                    ( MQTT_RECV_POLLING_TIMEOUT_MS )
 
 /*************************************************************
  * PUBLIC FUNCTIONS

@@ -16,6 +16,8 @@
  ************************************************************/
 #define LAN_TASK_STACK_SIZE     ( 1024U*2 )
 
+#define RECV_INTERRUPT_SIGNAL   ( 0x01 )
+
 /*************************************************************
  * GLOBAL VARIABLES
  ************************************************************/
@@ -27,54 +29,36 @@ static osThreadId      g_lan_task_id;
 static void interrupt_pin_handler( nrf_drv_gpiote_pin_t pin,
                                    nrf_gpiote_polarity_t action )
 {
+    // diag_printf("GOT W5500 INTERRUPT\n");
+    // diag_printf("sir=%d\n", getSIR());
+
+    if ( action != GPIOTE_CONFIG_POLARITY_HiToLo )
+    {
+        return;
+    }
+
     if ( pin != W5500_INTERRUPT_PIN )
     {
         return;
     }
 
-    diag_printf("GOT W5500 INTERRUPT: sir=%d\n", getSIR());
-
-    uint8_t sir = getSIR();
-
-    if ( sir & (1 << MQTT_SOCK_NUM) )
-    {
-        // MQTT socket interrupt, set OS flag to handle in mainloop
-        osSignalSet(g_lan_task_id, LAN_TASK_RECV_INTERRUPT_SIGNAL);
-    }
-
-    for (uint32_t i = 0; i < 8; i++)
-    {
-        // If the interrupt bit is set, clear the interrupt register
-        if ( sir & (1 << i) )
-        {
-            setSn_IR(i, 0b1111);
-        }
-    }
+    // Signal mainloop to processes received msg
+    osSignalSet(g_lan_task_id, RECV_INTERRUPT_SIGNAL);
 }
 
 /*************************************************************
  * PRIVATE FUNCTIONS
  ************************************************************/
 
-// static char* asdf = "this shit is fucked...";
-// static uint8_t recv_buff[1024];
-// static ipv4_addr_t addr =
-// {
-//     .bytes = MQTT_BROKER_ADDR
-// };
+static ALWAYS_INLINE void _clear_interrupts(void)
+{
+    uint8_t sir = getSIR();
 
-// static void _LANTask_Main(void const* args UNUSED)
-// {
-//     LAN_Connect(MQTT_SOCK_NUM, addr, 6901);
-
-//     while (1)
-//     {
-//         // LAN_Send(MQTT_SOCK_NUM, (uint8_t* )asdf, sizeof(asdf));
-//         // osDelay(500);
-//         LAN_Recv(MQTT_SOCK_NUM, recv_buff, strlen(asdf));
-//         diag_printf("%s\n", recv_buff);
-//     }
-// }
+    if ( sir & (1 << MQTT_SOCK_NUM) )
+    {
+        setSn_IR(MQTT_SOCK_NUM, 1 << 2);
+    }
+}
 
 static void _LANTask_Main(void const* args UNUSED)
 {
@@ -94,21 +78,15 @@ static void _LANTask_Main(void const* args UNUSED)
 
     while (1)
     {
-        // osSignalWait(LAN_TASK_RECV_INTERRUPT_SIGNAL, osWaitForever);
+        osSignalWait(RECV_INTERRUPT_SIGNAL, osWaitForever);
 
-        // err_code = MqttClient_ManageRunLoop();
+        err_code = MqttClient_ManageRunLoop();
+        if ( (err_code != MQTT_OK) && (err_code != MQTT_NEED_MORE_BYTES) )
+        {
+            diag_printf("ManageRunLoop failed: err_code=%d\n", err_code);
+        }
 
-        // if ( err_code != MQTT_OK )
-        // {
-        //     diag_printf("ManageRunLoop failed: err_code=%d\n", err_code);
-        // }
-
-        // Yield to other tasks...
-        osDelay(LAN_TASK_PERIODICITY_MS);
-    }
-    while (1)
-    {
-        osDelay(LAN_TASK_PERIODICITY_MS);
+        _clear_interrupts();
     }
 }
 

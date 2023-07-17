@@ -61,6 +61,7 @@ enum Priorities {
     PRIO_OTG_FS_IRQn        = configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY+1,
     PRIO_ETH_IRQn           = configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY+1,
     PRIO_TIM1_CC_IRQn       = configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY+1,
+    PRIO_GPIOTE_IRQn        = configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY+1,
     PRIO_TIM3_IRQn          = configLIBRARY_LOWEST_INTERRUPT_PRIORITY,
 
     /* Application-specific priorities : CMSIS-OS priorities +3..0..-3

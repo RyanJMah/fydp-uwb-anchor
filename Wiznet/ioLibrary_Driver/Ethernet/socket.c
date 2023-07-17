@@ -376,6 +376,12 @@ int32_t recv(uint8_t sn, uint8_t * buf, uint16_t len)
     uint8_t  tmp = 0;
     uint16_t recvsize = 0;
 
+    uint32_t start_ticks = 0;
+    if ( osKernelRunning() )
+    {
+        start_ticks = osKernelSysTick();
+    }
+
     CHECK_SOCKNUM();
     CHECK_SOCKMODE(Sn_MR_TCP);
     CHECK_SOCKDATA();
@@ -417,7 +423,11 @@ int32_t recv(uint8_t sn, uint8_t * buf, uint16_t len)
         if ( osKernelRunning() )
         {
             // osSignalWait(LAN_TASK_RECV_INTERRUPT_SIGNAL, osWaitForever);
-            osDelay(1);
+            // osDelay(1);
+            if ( osKernelSysTick() - start_ticks )
+            {
+                break;
+            }
         }
     };
 
