@@ -7,6 +7,7 @@
 #include "w5500.h"
 #include "nrf_delay.h"
 #include "nrf_drv_gpiote.h"
+#include "app_mqtt.h"
 #include "mqtt_client.h"
 #include "lan.h"
 #include "lan_task.h"
@@ -21,7 +22,13 @@
 /*************************************************************
  * GLOBAL VARIABLES
  ************************************************************/
-static osThreadId      g_lan_task_id;
+static osThreadId g_lan_task_id;
+static osTimerId  g_heartbeat_timer_id;
+
+// Foward declare timer callback...
+static void _send_heartbeat(const void* args UNUSED);
+static osTimerDef(g_heartbeat_timer, _send_heartbeat);
+
 
 /*************************************************************
  * INTERRUPT HANDLERS
@@ -49,6 +56,13 @@ static void interrupt_pin_handler( nrf_drv_gpiote_pin_t pin,
 /*************************************************************
  * PRIVATE FUNCTIONS
  ************************************************************/
+static void _send_heartbeat(const void* args UNUSED)
+{
+    static char _heartbeat_json[]      = "{\"status\": \"online\"}";
+    static uint8_t _heartbeat_json_len = sizeof(_heartbeat_json);
+
+    MqttClient_Publish(HEARTBEAT_TOPIC, _heartbeat_json, _heartbeat_json_len);
+}
 
 static ALWAYS_INLINE void _clear_interrupts(void)
 {
@@ -76,9 +90,17 @@ static void _LANTask_Main(void const* args UNUSED)
         diag_printf("FAILED TO CONNECT TO BROKER, err_code=%d\n", err_code);
     }
 
+    // Create and start the heartbeat timer...
+    g_heartbeat_timer_id = osTimerCreate( osTimer(g_heartbeat_timer),
+                                          osTimerPeriodic,
+                                          NULL );
+    osTimerStart( g_heartbeat_timer_id, MQTT_HEARTBEAT_PERIODICITY_MS );
+
     while (1)
     {
         osSignalWait(RECV_INTERRUPT_SIGNAL, osWaitForever);
+
+        // diag_printf("RECEIVED MESSAGE!");
 
         err_code = MqttClient_ManageRunLoop();
         if ( (err_code != MQTT_OK) && (err_code != MQTT_NEED_MORE_BYTES) )

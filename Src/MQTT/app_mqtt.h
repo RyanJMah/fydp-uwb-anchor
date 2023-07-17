@@ -56,7 +56,6 @@ typedef struct
 /*************************************************************
  * PUBLIC FUNCTIONS
  ************************************************************/
-extern MqttRetCode_t TelemetryData_Publish(struct ranging_measurements* rm);
 ALWAYS_INLINE MqttRetCode_t TelemetryData_Publish(struct ranging_measurements* rm)
 {
     TelemetryData_t telem_data =
