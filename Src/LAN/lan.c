@@ -1,6 +1,9 @@
 #include <stdbool.h>
 #include "cmsis_os.h"
 #include "macros.h"
+#include "custom_board.h"
+#include "nrf_delay.h"
+#include "nrf_drv_gpiote.h"
 #include "user_ethernet.h"
 #include "user_spi.h"
 #include "w5500.h"
@@ -34,18 +37,67 @@ static ALWAYS_INLINE void _release_mutex(void)
     osMutexRelease(g_lan_mutex_id);
 }
 
+static ALWAYS_INLINE void _init_reset_pin(void)
+{
+    nrf_drv_gpiote_out_config_t out_config = GPIOTE_CONFIG_OUT_SIMPLE(false);
+
+    if ( nrf_drv_gpiote_out_init( W5500_RESET_PIN,
+                                  &out_config) != NRF_SUCCESS )
+    {
+        diag_printf("FAILED TO INIT RESET PIN\n");
+    }
+}
+
+static ALWAYS_INLINE void _reset_via_reset_pin(void)
+{
+    nrf_drv_gpiote_out_clear(W5500_RESET_PIN);
+    nrf_delay_ms(100);
+    nrf_drv_gpiote_out_set(W5500_RESET_PIN);
+    nrf_delay_ms(100);
+}
+
+// static ALWAYS_INLINE void _init_recv_interrupt(nrfx_gpiote_evt_handler_t isr_func)
+// {
+//     // configure interrupt on falling edge
+//     nrf_drv_gpiote_in_config_t int_pin_config = GPIOTE_CONFIG_IN_SENSE_HITOLO(true);
+//     if ( nrf_drv_gpiote_in_init( W5500_INTERRUPT_PIN,
+//                                  &int_pin_config,
+//                                  isr_func ) != NRF_SUCCESS )
+//     {
+//         diag_printf("FAILED TO INITIALIZE W5500 INTERRUPT PIN\n");
+//     }
+//     nrf_drv_gpiote_in_event_enable(W5500_INTERRUPT_PIN, true);
+   
+//     // configure interrupts on MQTT socket
+//     setSIMR(1 << MQTT_SOCK_NUM);
+
+//     if ( getSIMR() != (1 << MQTT_SOCK_NUM) )
+//     {
+//         diag_printf("FAILED TO ENABLE SOCKET INTERRUPT ON W5500\n");
+//     }
+// }
+
 /*************************************************************
  * PUBLIC FUNCTIONS
  ************************************************************/
 
-void LAN_Init(void)
+void LAN_Init(nrfx_gpiote_evt_handler_t isr_func)
 {
     diag_printf("Initializing ethernet...\n");
+
+    g_lan_mutex_id = osMutexCreate( osMutex(g_lan_mutex) );
+
+    // Make sure GPIO is initialized
+    nrf_drv_gpiote_init();
+
+    // Reset the chip...
+    _init_reset_pin();
+    _reset_via_reset_pin();
 
     spi1_master_init();
     user_ethernet_init();
 
-    g_lan_mutex_id = osMutexCreate( osMutex(g_lan_mutex) );
+    // _init_recv_interrupt();
 
     diag_printf("Ethernet initialized!\n");
 }

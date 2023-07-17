@@ -1,5 +1,6 @@
 #pragma once
 
+#include "nrfx_gpiote.h"
 #include "socket.h"
 
 /*************************************************************
@@ -25,7 +26,7 @@ typedef struct
  * PUBLIC FUNCTIONS
  ************************************************************/
 
-void LAN_Init();
+void LAN_Init(nrfx_gpiote_evt_handler_t isr_func);
 
 int16_t LAN_Connect(sock_t sock, ipv4_addr_t addr, uint16_t port);
 

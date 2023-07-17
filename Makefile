@@ -33,7 +33,7 @@ endif
 
 .PHONY: all
 all:
-	@$(EM_BUILD) -echo -config "Common" $(DWM3001CDK_PROJ_XML)
+	@$(EM_BUILD) -echo -config "Common" $(DWM3001CDK_PROJ_XML) 2>&1
 	@$(SIZE) $(TARGET_ELF)
 
 .PHONY: clean
