@@ -115,9 +115,9 @@ void LAN_Init(nrfx_gpiote_evt_handler_t isr_func)
     nrf_drv_gpiote_init();
 
     // Reset the chip...
-    // _init_reset_pin();
-    // _reset_via_reset_pin();
-    // _deinit_reset_pin();
+    _init_reset_pin();
+    _reset_via_reset_pin();
+    _deinit_reset_pin();
 
     spi1_master_init();
     user_ethernet_init();
