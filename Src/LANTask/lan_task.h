@@ -7,7 +7,7 @@
  * MACROS
  ************************************************************/
 #define LAN_TASK_PERIODICITY_MS     ( 5000 )
-#define LAN_TASK_PRIORITY           ( osPriorityBelowNormal )
+#define LAN_TASK_PRIORITY           ( osPriorityLow )
 
 /*************************************************************
  * PUBLIC FUNCTIONS

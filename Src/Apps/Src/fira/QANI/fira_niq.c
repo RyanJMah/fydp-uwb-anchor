@@ -243,7 +243,6 @@ static void report_cb(const struct ranging_results *results, void *user_data) {
     }
  
     rm = (struct ranging_measurements *)(&results->measurements[i]);
-    TelemetryData_Publish(rm);
 
     len += snprintf(&str_result->str[len], str_result->len - len,
                     "{\"Addr\":\"0x%04x\",\"Status\":\"%s\"",
