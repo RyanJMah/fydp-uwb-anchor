@@ -4,7 +4,18 @@
 
 #define ANCHOR_ID   0
 
-#define MQTT_BROKER_ADDR            {169, 254, 0, 1}
+#define ANCHOR_MAC_ADDR             {0x00, 0x08, 0xdc,0x00, 0xab, 0xcd}
+
+#define ANCHOR_LAN_USING_DHCP       0
+
+#if !ANCHOR_LAN_USING_DHCP
+#define ANCHOR_LAN_IP_ADDR          {192, 168, 8, 3}
+#endif
+
+#define ANCHOR_LAN_GW_ADDR          {192, 168, 8, 1}
+#define ANCHOR_LAN_SUBNET_MASK      {255, 255, 255, 0}
+
+#define MQTT_BROKER_ADDR            {192, 168, 8, 2}
 #define MQTT_BROKER_PORT            1883
 
 #define MQTT_CLIENT_IDENTIFIER      "GuidingLite_Anchor_" STR(ANCHOR_ID)

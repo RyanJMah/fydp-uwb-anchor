@@ -7,25 +7,30 @@
 
 // #include "nrf_log.h"
 #include "deca_dbg.h"
-
 #include "custom_board.h"
+
+#include "anchor_config.h"
 
 ///////////////////////////////////
 // Default Network Configuration //
 ///////////////////////////////////
-// wiz_NetInfo gWIZNETINFO = { .mac = {0x00, 0x08, 0xdc,0x00, 0xab, 0xcd},
-//                             .ip = {192, 168, 1, 225}, 
-//                             .sn = {255,255,255,0},
-//                             .gw = {192, 168, 1, 1}, 
-//                             .dns = {8,8,8,8},
-//                             .dhcp = NETINFO_DHCP };
 
-wiz_NetInfo gWIZNETINFO = { .mac = {0x00, 0x08, 0xdc,0x00, 0xab, 0xcd},
-                            .ip = {169, 254, 0, 2}, 
-                            .sn = {255, 255, 255, 0},
-                            // .gw = {192, 168, 1, 1}, 
-                            // .dns = {8,8,8,8},
-                            .dhcp = NETINFO_STATIC };
+wiz_NetInfo gWIZNETINFO =
+{
+    .mac = ANCHOR_MAC_ADDR,
+    .sn = ANCHOR_LAN_SUBNET_MASK,
+    .gw   = ANCHOR_LAN_GW_ADDR,
+
+#if !ANCHOR_LAN_USING_DHCP
+    .ip = ANCHOR_LAN_IP_ADDR,
+#endif
+
+#if ANCHOR_USE_DHCP
+    .dhcp = NETINFO_DHCP
+#else
+    .dhcp = NETINFO_STATIC
+#endif
+};
 
 void wizchip_select(void)
 {
