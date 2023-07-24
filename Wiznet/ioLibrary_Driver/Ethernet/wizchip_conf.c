@@ -162,6 +162,10 @@ _WIZCHIP  WIZCHIP =
 //    .IF.SPI._write_byte  = wizchip_spi_writebyte
       };
 */      
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-braces"
+
 _WIZCHIP  WIZCHIP =
       {
       _WIZCHIP_IO_MODE_,
@@ -179,6 +183,7 @@ _WIZCHIP  WIZCHIP =
 //    wizchip_spi_writebyte
       };
 
+#pragma GCC diagnostic pop
 
 static uint8_t    _DNS_[4];      // DNS server ip address
 static dhcp_mode  _DHCP_;        // DHCP mode

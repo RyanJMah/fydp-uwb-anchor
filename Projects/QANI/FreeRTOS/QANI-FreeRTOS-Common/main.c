@@ -75,7 +75,7 @@
 #include "nrf_sdh.h"
 #endif
 
-#include "lan.h"
+#include "lan_task.h"
 
 #ifndef ACCESSORY_RANGING_ROLE
 #define ACCESSORY_RANGING_ROLE (1) /**< Responder 0, Initiator 1 */
@@ -150,15 +150,6 @@ int main(void) {
     snprintf(advertising_name, sizeof(advertising_name), "%s (%08X)", (char*)BoardName, (unsigned int)NRF_FICR->DEVICEADDR[0]);
     ble_init(advertising_name);
 
-    if ( LAN_Init() != SOCK_OK )
-    {
-        diag_printf("something is stupid\n");
-
-        while (1)
-        {
-
-        }
-    }
 
     EventManagerInit();
     BoardInit();
@@ -166,7 +157,9 @@ int main(void) {
         APP_ERROR_HANDLER(NRF_ERROR_RESOURCES);
     }
     DefaultTaskInit();
-   
+
+    LANTask_Init();
+
     // Driver version is available after probing of the DW chip
     const char ver[]    = FULL_VERSION;
     const char *drv_ver = dwt_version_string();

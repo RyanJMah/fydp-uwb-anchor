@@ -140,6 +140,8 @@ extern "C" {
 #define W5500_SPI_CLK_PIN       NRF_GPIO_PIN_MAP(0, 4)
 #define W5500_SPI_MOSI_PIN      NRF_GPIO_PIN_MAP(0, 14)
 #define W5500_SPI_MISO_PIN      NRF_GPIO_PIN_MAP(0, 22)
+#define W5500_INTERRUPT_PIN     NRF_GPIO_PIN_MAP(1, 8)
+#define W5500_RESET_PIN         NRF_GPIO_PIN_MAP(0, 6)
 
 // UART symbolic constants
 #define UART_0_TX_PIN           TX_PIN_NUMBER

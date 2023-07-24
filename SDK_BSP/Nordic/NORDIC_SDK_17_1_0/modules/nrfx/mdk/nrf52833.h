@@ -2229,7 +2229,7 @@ typedef struct {                                /*!< (@ 0x40014000) EGU0 Structu
   */
 
 typedef struct {                                /*!< (@ 0x40014000) SWI0 Structure                                             */
-  __IM  uint32_t  UNUSED;                       /*!< (@ 0x00000000) Unused.                                                    */
+  __IM  uint32_t  DUMMY;                        /*!< (@ 0x00000000) Unused.                                                    */
 } NRF_SWI_Type;                                 /*!< Size = 4 (0x4)                                                            */
 
 
@@ -2502,7 +2502,7 @@ typedef struct {                                /*!< (@ 0x40025000) I2S Structur
   */
 
 typedef struct {                                /*!< (@ 0x40026000) FPU Structure                                              */
-  __IM  uint32_t  UNUSED;                       /*!< (@ 0x00000000) Unused.                                                    */
+  __IM  uint32_t DUMMY;                         /*!< (@ 0x00000000) Unused.                                                    */
 } NRF_FPU_Type;                                 /*!< Size = 4 (0x4)                                                            */
 
 
