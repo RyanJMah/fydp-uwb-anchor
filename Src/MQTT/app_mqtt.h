@@ -10,12 +10,12 @@
 /*************************************************************
  * MACROS
  ************************************************************/
-#define HEARTBEAT_TOPIC         "/gl/anchor/" STR(ANCHOR_ID) "/heartbeat"
-#define DATA_TOPIC              "/gl/anchor/" STR(ANCHOR_ID) "/data"
-#define CONN_REQ_TOPIC          "/gl/anchor/" STR(ANCHOR_ID) "/conn/req"
-#define CONN_RESP_TOPIC         "/gl/anchor/" STR(ANCHOR_ID) "/conn/resp"
-#define NI_CONFIG_TOPIC         "/gl/anchor/" STR(ANCHOR_ID) "/conn/ni_config"
-#define BASE_SELF_CONFIG_TOPIC  "/gl/anchor/" STR(ANCHOR_ID) "/config"
+#define HEARTBEAT_TOPIC         "gl/anchor/" STR(ANCHOR_ID) "/heartbeat"
+#define DATA_TOPIC              "gl/anchor/" STR(ANCHOR_ID) "/data"
+#define CONN_REQ_TOPIC          "gl/anchor/" STR(ANCHOR_ID) "/conn/req"
+#define CONN_RESP_TOPIC         "gl/anchor/" STR(ANCHOR_ID) "/conn/resp"
+#define NI_CONFIG_TOPIC         "gl/anchor/" STR(ANCHOR_ID) "/conn/ni_config"
+#define BASE_SELF_CONFIG_TOPIC  "gl/anchor/" STR(ANCHOR_ID) "/config"
 
 /*************************************************************
 * TYPE DEFINITIONS

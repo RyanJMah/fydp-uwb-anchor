@@ -1,3 +1,11 @@
+check_defined = \
+    $(strip $(foreach 1,$1, \
+        $(call __check_defined,$1,$(strip $(value 2)))))
+
+__check_defined = \
+    $(if $(value $1),, \
+      $(error Undefined $1$(if $2, ($2))))
+
 ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
     HOST_OS := Windows
 else
@@ -33,7 +41,8 @@ endif
 
 .PHONY: all
 all:
-	@$(EM_BUILD) -echo -config "Common" $(DWM3001CDK_PROJ_XML) 2>&1
+	$(call check_defined, ANCHOR_ID, anchor id must be provided)
+	@$(EM_BUILD) -D MAKEFILE_ANCHOR_ID=$(ANCHOR_ID) -echo -config "Common" $(DWM3001CDK_PROJ_XML) 2>&1
 	@$(SIZE) $(TARGET_ELF)
 
 .PHONY: clean

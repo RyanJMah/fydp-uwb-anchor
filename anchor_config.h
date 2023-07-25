@@ -2,14 +2,12 @@
 
 #include "macros.h"
 
-#define ANCHOR_ID   0
-
-#define ANCHOR_MAC_ADDR             {0x00, 0x08, 0xdc,0x00, 0xab, 0xcd}
+#define ANCHOR_MAC_ADDR             {0x00, 0x08, 0xdc, 0x00, 0xab, ANCHOR_ID}
 
 #define ANCHOR_LAN_USING_DHCP       0
 
 #if !ANCHOR_LAN_USING_DHCP
-#define ANCHOR_LAN_IP_ADDR          {192, 168, 8, 3}
+#define ANCHOR_LAN_IP_ADDR          {192, 168, 8, 3 + ANCHOR_ID}
 #endif
 
 #define ANCHOR_LAN_GW_ADDR          {192, 168, 8, 1}
