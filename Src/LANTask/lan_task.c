@@ -88,6 +88,7 @@ static void _LANTask_Main(void const* args UNUSED)
     if ( err_code != MQTT_OK )
     {
         diag_printf("FAILED TO CONNECT TO BROKER, err_code=%d\n", err_code);
+        NVIC_SystemReset();
     }
 
     // Create and start the heartbeat timer...
@@ -103,9 +104,21 @@ static void _LANTask_Main(void const* args UNUSED)
         // diag_printf("RECEIVED MESSAGE!");
 
         err_code = MqttClient_ManageRunLoop();
-        if ( (err_code != MQTT_OK) && (err_code != MQTT_NEED_MORE_BYTES) )
+        switch (err_code)
         {
-            diag_printf("ManageRunLoop failed: err_code=%d\n", err_code);
+            case MQTT_NO_MEM:
+            case MQTT_SERVER_REFUSED:
+            case MQTT_ILLEGAL_STATE:
+            case MQTT_SOCK_INTERNAL_ERR:
+            {
+                diag_printf("ManageRunLoop failed: err_code=%d\n", err_code);
+                NVIC_SystemReset();
+            }
+
+            default:
+            {
+                break;
+            }
         }
 
         _clear_interrupts();
