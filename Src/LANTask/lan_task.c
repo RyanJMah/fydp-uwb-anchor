@@ -59,7 +59,7 @@ static void interrupt_pin_handler( nrf_drv_gpiote_pin_t pin,
 static void _send_heartbeat(const void* args UNUSED)
 {
     static char _heartbeat_json[]      = "{\"status\": \"online\"}";
-    static uint8_t _heartbeat_json_len = sizeof(_heartbeat_json);
+    static uint8_t _heartbeat_json_len = sizeof(_heartbeat_json) - 1;
 
     MqttClient_Publish(HEARTBEAT_TOPIC, _heartbeat_json, _heartbeat_json_len);
 }
