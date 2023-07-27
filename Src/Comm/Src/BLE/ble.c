@@ -538,7 +538,7 @@ static void advertising_init(void)
   
     init.srdata.name_type                = BLE_ADVDATA_FULL_NAME;
 
-    init.config.ble_adv_fast_enabled  = false;
+    init.config.ble_adv_fast_enabled  = true;
     init.config.ble_adv_fast_interval = APP_ADV_INTERVAL_FAST;
     init.config.ble_adv_fast_timeout  = APP_ADV_DURATION;
     init.config.ble_adv_slow_enabled  = true;

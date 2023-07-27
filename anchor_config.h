@@ -2,6 +2,10 @@
 
 #include "macros.h"
 
+#ifndef ANCHOR_ID
+#error "ANCHOR_ID is not defined"
+#endif
+
 #define ANCHOR_MAC_ADDR             {0x00, 0x08, 0xdc, 0x00, 0xab, ANCHOR_ID}
 
 #define ANCHOR_LAN_USING_DHCP       0
@@ -19,6 +23,6 @@
 #define MQTT_CLIENT_IDENTIFIER      "GuidingLite_Anchor_" STR(ANCHOR_ID)
 
 #define PROJECT_NAME_               "GuidingLite - UWB Anchor Apple NI - FreeRTOS"
-#define BOARD_NAME_                 "GuidingLite Anchor PCB"
+#define BOARD_NAME_                 "GL_Anchor_" STR(ANCHOR_ID)
 #define OS_NAME_                    "FreeRTOS"
 #define APPLICATION_NAME_           "UWB Anchor Apple NI"
