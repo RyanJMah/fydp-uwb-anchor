@@ -20,6 +20,11 @@
 /*************************************************************
 * TYPE DEFINITIONS
 ************************************************************/
+
+/*
+ * For status codes, see `enum pctt_status_ranging` in `pctt_region_params.h`
+ */
+
 typedef struct
 {
     uint8_t status;
