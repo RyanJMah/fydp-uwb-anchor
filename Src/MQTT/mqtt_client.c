@@ -1,5 +1,5 @@
 #include <string.h>
-#include "deca_dbg.h"
+#include "gl_log.h"
 #include "macros.h"
 #include "cmsis_os.h"
 #include "core_mqtt.h"
@@ -116,7 +116,7 @@ MqttRetCode_t MqttClient_Init(void)
                              &session_present );
     require_noerr(err_code, exit);
 
-    diag_printf("Successfully connected to MQTT broker...\n");
+    GL_LOG("Successfully connected to MQTT broker...\n");
 
 exit:
     return err_code;

@@ -5,8 +5,7 @@
 #include <stdint.h>
 #include <string.h>
 
-// #include "nrf_log.h"
-#include "deca_dbg.h"
+#include "gl_log.h"
 #include "custom_board.h"
 
 #include "anchor_config.h"
@@ -69,20 +68,20 @@ void user_ethernet_init()
 
     /* WIZCHIP SOCKET Buffer initialize */
 	
-    diag_printf("W5500 memory init\r\n");
+    GL_LOG("W5500 memory init\r\n");
 
     if(ctlwizchip(CW_INIT_WIZCHIP,(void*)memsize) == -1)
     {
-    	diag_printf("WIZCHIP Initialized fail.\r\n");
+    	GL_LOG("WIZCHIP Initialized fail.\r\n");
        while(1);
     }
 
     /* PHY link status check */
-    diag_printf("W5500 PHY Link Status Check\r\n");
+    GL_LOG("W5500 PHY Link Status Check\r\n");
     do
     {
        if(ctlwizchip(CW_GET_PHYLINK, (void*)&tmp) == -1)
-    	   diag_printf("Unknown PHY Link stauts.\r\n");
+    	   GL_LOG("Unknown PHY Link stauts.\r\n");
     }while(tmp == PHY_LINK_OFF);
 
     timeout_info.retry_cnt = 1;
@@ -101,12 +100,12 @@ void network_init(void)
 
 	// Display Network Information
 	ctlwizchip(CW_GET_ID,(void*)tmpstr);
-	diag_printf("\r\n=== %s NET CONF ===\r\n",(char*)tmpstr);
-	diag_printf("MAC: %02X:%02X:%02X:%02X:%02X:%02X\r\n",gWIZNETINFO.mac[0],gWIZNETINFO.mac[1],gWIZNETINFO.mac[2],
+	GL_LOG("\r\n=== %s NET CONF ===\r\n",(char*)tmpstr);
+	GL_LOG("MAC: %02X:%02X:%02X:%02X:%02X:%02X\r\n",gWIZNETINFO.mac[0],gWIZNETINFO.mac[1],gWIZNETINFO.mac[2],
 		  gWIZNETINFO.mac[3],gWIZNETINFO.mac[4],gWIZNETINFO.mac[5]);
-	diag_printf("SIP: %d.%d.%d.%d\r\n", gWIZNETINFO.ip[0],gWIZNETINFO.ip[1],gWIZNETINFO.ip[2],gWIZNETINFO.ip[3]);
-	diag_printf("GAR: %d.%d.%d.%d\r\n", gWIZNETINFO.gw[0],gWIZNETINFO.gw[1],gWIZNETINFO.gw[2],gWIZNETINFO.gw[3]);
-	diag_printf("SUB: %d.%d.%d.%d\r\n", gWIZNETINFO.sn[0],gWIZNETINFO.sn[1],gWIZNETINFO.sn[2],gWIZNETINFO.sn[3]);
-	diag_printf("DNS: %d.%d.%d.%d\r\n", gWIZNETINFO.dns[0],gWIZNETINFO.dns[1],gWIZNETINFO.dns[2],gWIZNETINFO.dns[3]);
-	diag_printf("======================\r\n");
+	GL_LOG("SIP: %d.%d.%d.%d\r\n", gWIZNETINFO.ip[0],gWIZNETINFO.ip[1],gWIZNETINFO.ip[2],gWIZNETINFO.ip[3]);
+	GL_LOG("GAR: %d.%d.%d.%d\r\n", gWIZNETINFO.gw[0],gWIZNETINFO.gw[1],gWIZNETINFO.gw[2],gWIZNETINFO.gw[3]);
+	GL_LOG("SUB: %d.%d.%d.%d\r\n", gWIZNETINFO.sn[0],gWIZNETINFO.sn[1],gWIZNETINFO.sn[2],gWIZNETINFO.sn[3]);
+	GL_LOG("DNS: %d.%d.%d.%d\r\n", gWIZNETINFO.dns[0],gWIZNETINFO.dns[1],gWIZNETINFO.dns[2],gWIZNETINFO.dns[3]);
+	GL_LOG("======================\r\n");
 }

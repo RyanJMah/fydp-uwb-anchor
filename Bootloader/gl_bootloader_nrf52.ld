@@ -5,8 +5,8 @@ GROUP(-lgcc -lc -lnosys)
 
 MEMORY
 {
-    FLASH (rx) : ORIGIN = 0x0, LENGTH = 0x100000
-    RAM (rwx)  : ORIGIN = 0x20000000, LENGTH = 0x40000
+    FLASH (rx) : ORIGIN = 0x0, LENGTH = 0x80000
+    RAM (rwx)  : ORIGIN = 0x20000000, LENGTH = 0x20000
 }
 
 SECTIONS
@@ -58,6 +58,13 @@ SECTIONS
     {
 
     }
+
+    .cli_command :
+    {
+        PROVIDE(__start_cli_command = .);
+        KEEP(*(.cli_command))
+        PROVIDE(__stop_cli_command = .);
+    } > FLASH
 
     .pwr_mgmt_data :
     {

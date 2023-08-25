@@ -7,7 +7,7 @@ $(OUTPUT_DIRECTORY)/$(TARGET).out: \
 	LINKER_SCRIPT  := ./gl_bootloader_nrf52.ld
 
 SRC_FILES += $(wildcard ./src/*.c)
-SRC_FILES += $(wildcard ../Flash_Storage/src/*.c)
+SRC_FILES += $(wildcard ../Common/src/*.c)
 
 # Source files common to all targets
 SRC_FILES += \
@@ -15,6 +15,7 @@ SRC_FILES += \
 	$(SDK_ROOT)/components/libraries/log/src/nrf_log_backend_serial.c \
 	$(SDK_ROOT)/components/libraries/log/src/nrf_log_backend_uart.c \
 	$(SDK_ROOT)/components/libraries/log/src/nrf_log_default_backends.c \
+	$(SDK_ROOT)/components/libraries/log/src/nrf_log_backend_rtt.c \
 	$(SDK_ROOT)/components/libraries/log/src/nrf_log_frontend.c \
 	$(SDK_ROOT)/components/libraries/log/src/nrf_log_str_formatter.c \
 	$(SDK_ROOT)/components/libraries/util/app_error.c \
@@ -53,11 +54,15 @@ SRC_FILES += \
 	$(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_uart.c \
 	$(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_uarte.c \
 	$(SDK_ROOT)/modules/nrfx/mdk/system_nrf52833.c \
+	$(SDK_ROOT)/external/segger_rtt/SEGGER_RTT.c \
+	$(SDK_ROOT)/external/segger_rtt/SEGGER_RTT_Syscalls_GCC.c \
+	$(SDK_ROOT)/external/segger_rtt/SEGGER_RTT_printf.c \
 
 # Include folders common to all targets
 INC_FOLDERS += \
 	./inc \
-	../Flash_Storage/inc \
+	../Common/inc \
+	../Src/Boards/Src/DWM3001CDK/FreeRTOS/Common \
 	$(SDK_ROOT)/components/libraries/cli \
 	$(SDK_ROOT)/modules/nrfx/mdk \
 	$(SDK_ROOT)/components/libraries/scheduler \
@@ -89,12 +94,13 @@ INC_FOLDERS += \
 	$(SDK_ROOT)/modules/nrfx/hal \
 	$(SDK_ROOT)/external/fprintf \
 	$(SDK_ROOT)/components/libraries/log/src \
+	$(SDK_ROOT)/external/segger_rtt/
 
 # Libraries common to all targets
 LIB_FILES += \
 
 # Optimization flags
-OPT = -Os -g3
+OPT = -O0 -g3
 
 # Uncomment the line below to enable link time optimization
 OPT += -flto
@@ -110,6 +116,10 @@ CFLAGS += -mcpu=cortex-m4
 CFLAGS += -mthumb -mabi=aapcs
 CFLAGS += -Wall -Werror
 CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
+
+CFLAGS += -DGL_BOOTLOADER
+CFLAGS += -DUSE_RTT_PRINT=1
+CFLAGS += -DINITIALIZE_USER_SECTIONS
 
 # keep every function in a separate section, this allows linker to discard unused ones
 CFLAGS += -ffunction-sections -fdata-sections -fno-strict-aliasing
@@ -139,15 +149,14 @@ LDFLAGS += -Wl,--gc-sections
 # use newlib in nano version
 LDFLAGS += --specs=nano.specs
 
-$(TARGET): CFLAGS += -D__HEAP_SIZE=8192
-$(TARGET): CFLAGS += -D__STACK_SIZE=8192
-$(TARGET): ASMFLAGS += -D__HEAP_SIZE=8192
-$(TARGET): ASMFLAGS += -D__STACK_SIZE=8192
+$(TARGET): CFLAGS += -D__HEAP_SIZE=2048
+$(TARGET): CFLAGS += -D__STACK_SIZE=2048
+$(TARGET): ASMFLAGS += -D__HEAP_SIZE=2048
+$(TARGET): ASMFLAGS += -D__STACK_SIZE=2048
 
 # Add standard libraries at the very end of the linker input, after all objects
 # that may need symbols provided by these libraries.
 LIB_FILES += -lc -lnosys -lm
-
 
 .PHONY: default help
 
@@ -176,10 +185,10 @@ flash: default
 	nrfjprog -f nrf52 --program $(OUTPUT_DIRECTORY)/$(TARGET).hex --sectorerase
 	nrfjprog -f nrf52 --reset
 
-erase:
+flash_erase:
 	nrfjprog -f nrf52 --eraseall
 
-SDK_CONFIG_FILE := ../config/sdk_config.h
+SDK_CONFIG_FILE := ./inc/sdk_config.h
 CMSIS_CONFIG_TOOL := $(SDK_ROOT)/external_tools/cmsisconfig/CMSIS_Configuration_Wizard.jar
 sdk_config:
 	java -jar $(CMSIS_CONFIG_TOOL) $(SDK_CONFIG_FILE)

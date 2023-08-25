@@ -9,7 +9,7 @@
 #include "user_spi.h"
 #include "w5500.h"
 #include "socket.h"
-#include "deca_dbg.h"
+#include "gl_log.h"
 #include "lan.h"
 
 /*************************************************************
@@ -45,7 +45,7 @@ static ALWAYS_INLINE void _init_reset_pin(void)
     if ( nrf_drv_gpiote_out_init( W5500_RESET_PIN,
                                   &out_config) != NRF_SUCCESS )
     {
-        diag_printf("FAILED TO INIT RESET PIN\n");
+        GL_LOG("FAILED TO INIT RESET PIN\n");
     }
 }
 
@@ -73,7 +73,7 @@ static ALWAYS_INLINE void _init_interrupts(nrfx_gpiote_evt_handler_t isr_func)
                                  &int_pin_config,
                                  isr_func ) != NRF_SUCCESS )
     {
-        diag_printf("FAILED TO INITIALIZE W5500 INTERRUPT PIN\n");
+        GL_LOG("FAILED TO INITIALIZE W5500 INTERRUPT PIN\n");
     }
     nrf_drv_gpiote_in_event_enable(W5500_INTERRUPT_PIN, true);
 
@@ -81,21 +81,21 @@ static ALWAYS_INLINE void _init_interrupts(nrfx_gpiote_evt_handler_t isr_func)
     setIMR(0b1111 << 4);
     if ( getIMR() != (0b1111 << 4) )
     {
-        diag_printf("FAILED TO DISABLE GLOBAL INTERRUPTS ON W5500\n");
+        GL_LOG("FAILED TO DISABLE GLOBAL INTERRUPTS ON W5500\n");
     }
 
     // configure interrupts on MQTT socket
     setSIMR(1 << MQTT_SOCK_NUM);
     if ( getSIMR() != (1 << MQTT_SOCK_NUM) )
     {
-        diag_printf("FAILED TO ENABLE SOCKET INTERRUPT ON W5500\n");
+        GL_LOG("FAILED TO ENABLE SOCKET INTERRUPT ON W5500\n");
     }
 
     // Enable recv interrupt
     setSn_IMR(MQTT_SOCK_NUM, 1 << 2);
     if ( getSn_IMR(MQTT_SOCK_NUM) != 1 << 2 )
     {
-        diag_printf("FAILED TO ENABLE RECT SOCKET INTERRUPT ON W5500\n");
+        GL_LOG("FAILED TO ENABLE RECT SOCKET INTERRUPT ON W5500\n");
     }
 
     nrf_delay_ms(100);
@@ -107,7 +107,7 @@ static ALWAYS_INLINE void _init_interrupts(nrfx_gpiote_evt_handler_t isr_func)
 
 void LAN_Init(nrfx_gpiote_evt_handler_t isr_func)
 {
-    diag_printf("Initializing ethernet...\n");
+    GL_LOG("Initializing ethernet...\n");
 
     g_lan_mutex_id = osMutexCreate( osMutex(g_lan_mutex) );
 
@@ -124,7 +124,7 @@ void LAN_Init(nrfx_gpiote_evt_handler_t isr_func)
 
     _init_interrupts( isr_func );
 
-    diag_printf("Ethernet initialized!\n");
+    GL_LOG("Ethernet initialized!\n");
 }
 
 int16_t LAN_Connect(sock_t sock, ipv4_addr_t addr, uint16_t port)
@@ -132,12 +132,12 @@ int16_t LAN_Connect(sock_t sock, ipv4_addr_t addr, uint16_t port)
     int16_t err_code;
     bool    mutex_taken = _take_mutex();
 
-    diag_printf("creating socket...\n");
+    GL_LOG("creating socket...\n");
 
     err_code = socket( sock, Sn_MR_TCP, g_internal_port++, 0 );
     require( err_code == SOCK_OK, exit );
 
-    diag_printf(
+    GL_LOG(
             "connecting to server hosted at %d.%d.%d.%d\n",
             addr.bytes[0],
             addr.bytes[1],

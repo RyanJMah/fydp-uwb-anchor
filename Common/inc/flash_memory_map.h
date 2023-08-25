@@ -2,6 +2,10 @@
 
 #include "macros.h"
 
+/*************************************************************
+ * MACROS
+ ************************************************************/
+
 #define MCU_FLASH_SIZE      ( 512 * 1024 )  // 512KB
 #define FLASH_PAGE_SIZE     ( 4096 )
 
@@ -11,21 +15,21 @@
  *
  *  --------------------------------
  *  |                              |
- *  |          Bootloader          |    (0x0000 0000 - 0x0000 2800)     10 kB
- *  |          (10 pages)          |
+ *  |          Bootloader          |    20 kB   (0x0000 0000 - 0x0000 4FFF)
+ *  |          (5 pages)           |
  *  |                              |
  *  --------------------------------
  *  |                              |
- *  |   Application Data Storage   |    (0x0000 2800 - 0x0000 3000)     2 kB
+ *  |   Application Data Storage   |    8 kB    (0x0000 5000 - 0x0000 6FFF)
  *  |         (2 pages)            |
  *  |                              |
  *  --------------------------------
  *  |                              |
- *  |         Application          |    (0x0000 3000 - 0x0007 FFFF)     500 kB
- *  |         (125 pages)          |
+ *  |         Application          |    484 kB  (0x0000 7000 - 0x0007 FFFF)
+ *  |         ( pages)             |
  *  |                              |
- *  --------------------------------                                   ---------
- *                                                               Total  500 kB
+ *  --------------------------------   -------
+ *                               Total: 512 kB
  */
 
 #define FLASH_BOOTLOADER_SIZE           ( 10 * FLASH_PAGE_SIZE )

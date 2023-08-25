@@ -2,7 +2,7 @@
 #include "anchor_config.h"
 #include "fira_helper.h"
 #include "macros.h"
-#include "deca_dbg.h"
+#include "gl_log.h"
 #include "custom_board.h"
 #include "w5500.h"
 #include "nrf_delay.h"
@@ -78,7 +78,7 @@ static void _LANTask_Main(void const* args UNUSED)
 {
     MqttRetCode_t err_code;
 
-    diag_printf("INITIALIZING MQTT AND LAN...\n");
+    GL_LOG("INITIALIZING MQTT AND LAN...\n");
 
     // Initializes the W5500
     LAN_Init( interrupt_pin_handler );
