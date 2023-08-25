@@ -2,13 +2,13 @@
 
 #include <stdint.h>
 #include "cmsis_os.h"
+#include "anchor_config.h"
 
 /*************************************************************
  * MACROS
  ************************************************************/
 #define LAN_TASK_PRIORITY               ( osPriorityLow )
-#define RECV_TIMEOUT                    ( MQTT_RECV_POLLING_TIMEOUT_MS )
-#define MQTT_HEARTBEAT_PERIODICITY_MS   ( 5000 )
+#define MQTT_HEARTBEAT_PERIODICITY_MS   ( SOCKET_RECV_TIMEOUT )
 
 /*************************************************************
  * PUBLIC FUNCTIONS

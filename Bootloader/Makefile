@@ -9,6 +9,13 @@ $(OUTPUT_DIRECTORY)/$(TARGET).out: \
 SRC_FILES += $(wildcard ./src/*.c)
 SRC_FILES += $(wildcard ../Common/src/*.c)
 
+SRC_FILES += \
+	../Wiznet/user_ethernet.c \
+	../Wiznet/user_spi.c \
+	../Wiznet/ioLibrary_Driver/Ethernet/socket.c \
+	../Wiznet/ioLibrary_Driver/Ethernet/wizchip_conf.c \
+	../Wiznet/ioLibrary_Driver/Ethernet/W5500/w5500.c
+
 # Source files common to all targets
 SRC_FILES += \
 	$(SDK_ROOT)/modules/nrfx/mdk/gcc_startup_nrf52833.S \
@@ -60,8 +67,12 @@ SRC_FILES += \
 
 # Include folders common to all targets
 INC_FOLDERS += \
+	../ \
 	./inc \
 	../Common/inc \
+	../Wiznet \
+	../Wiznet/ioLibrary_Driver/Ethernet \
+	../Wiznet/ioLibrary_Driver/Ethernet/W5500 \
 	../Src/Boards/Src/DWM3001CDK/FreeRTOS/Common \
 	$(SDK_ROOT)/components/libraries/cli \
 	$(SDK_ROOT)/modules/nrfx/mdk \
@@ -90,6 +101,8 @@ INC_FOLDERS += \
 	$(SDK_ROOT)/components/libraries/atomic \
 	$(SDK_ROOT)/components/libraries/sortlist \
 	$(SDK_ROOT)/components/libraries/memobj \
+	$(SDK_ROOT)/components/libraries/bsp \
+	$(SDK_ROOT)/components/libraries/button \
 	$(SDK_ROOT)/modules/nrfx/drivers/include \
 	$(SDK_ROOT)/modules/nrfx/hal \
 	$(SDK_ROOT)/external/fprintf \
@@ -120,6 +133,11 @@ CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 CFLAGS += -DGL_BOOTLOADER
 CFLAGS += -DUSE_RTT_PRINT=1
 CFLAGS += -DINITIALIZE_USER_SECTIONS
+
+CFLAGS += -DBOARD_CUSTOM
+CFLAGS += -DBOARD_DWM3001_A1
+
+CFLAGS += -DANCHOR_ID=$(ANCHOR_ID)
 
 # keep every function in a separate section, this allows linker to discard unused ones
 CFLAGS += -ffunction-sections -fdata-sections -fno-strict-aliasing

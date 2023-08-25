@@ -2,6 +2,8 @@
 
 #include "macros.h"
 
+#define SOCKET_RECV_TIMEOUT         ( 5000 )
+
 #ifndef ANCHOR_ID
 #error "ANCHOR_ID is not defined"
 #endif

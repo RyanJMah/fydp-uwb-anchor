@@ -53,10 +53,13 @@
 //! THE POSSIBILITY OF SUCH DAMAGE.
 //
 //*****************************************************************************
+
+// Bootloader is baremetal, no OS
+#ifndef GL_BOOTLOADER
 #include "cmsis_os.h"
-#include "lan_task.h"
-#include "deca_dbg.h"
-#include "lan_task.h"
+#endif
+
+#include "anchor_config.h"
 #include "socket.h"
 
 //M20150401 : Typing Error
@@ -376,11 +379,13 @@ int32_t recv(uint8_t sn, uint8_t * buf, uint16_t len)
     uint8_t  tmp = 0;
     uint16_t recvsize = 0;
 
+    #ifndef GL_BOOTLOADER
     uint32_t start_ticks = 0;
     if ( osKernelRunning() )
     {
         start_ticks = osKernelSysTick();
     }
+    #endif
 
     CHECK_SOCKNUM();
     CHECK_SOCKMODE(Sn_MR_TCP);
@@ -420,6 +425,7 @@ int32_t recv(uint8_t sn, uint8_t * buf, uint16_t len)
             break;
         }
 
+        #ifndef GL_BOOTLOADER
         if ( osKernelRunning() )
         {
             // osSignalWait(LAN_TASK_RECV_INTERRUPT_SIGNAL, osWaitForever);
@@ -429,6 +435,7 @@ int32_t recv(uint8_t sn, uint8_t * buf, uint16_t len)
                 break;
             }
         }
+        #endif
     };
 
     if(recvsize < len) len = recvsize;    
