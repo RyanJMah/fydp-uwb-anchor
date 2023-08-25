@@ -2,20 +2,21 @@ TARGET           := gl_bootloader
 OUTPUT_DIRECTORY := build
 
 SDK_ROOT := ../SDK_BSP/Nordic/NORDIC_SDK_17_1_0
-PROJ_DIR := ./src
 
 $(OUTPUT_DIRECTORY)/$(TARGET).out: \
 	LINKER_SCRIPT  := ./gl_bootloader_nrf52.ld
 
+SRC_FILES += $(wildcard ./src/*.c)
+SRC_FILES += $(wildcard ../Flash_Storage/src/*.c)
+
 # Source files common to all targets
 SRC_FILES += \
-	$(SDK_ROOT)/modules/nrfx/mdk/gcc_startup_nrf52840.S \
+	$(SDK_ROOT)/modules/nrfx/mdk/gcc_startup_nrf52833.S \
 	$(SDK_ROOT)/components/libraries/log/src/nrf_log_backend_serial.c \
 	$(SDK_ROOT)/components/libraries/log/src/nrf_log_backend_uart.c \
 	$(SDK_ROOT)/components/libraries/log/src/nrf_log_default_backends.c \
 	$(SDK_ROOT)/components/libraries/log/src/nrf_log_frontend.c \
 	$(SDK_ROOT)/components/libraries/log/src/nrf_log_str_formatter.c \
-	$(SDK_ROOT)/components/boards/boards.c \
 	$(SDK_ROOT)/components/libraries/util/app_error.c \
 	$(SDK_ROOT)/components/libraries/util/app_error_handler_gcc.c \
 	$(SDK_ROOT)/components/libraries/util/app_error_weak.c \
@@ -51,13 +52,12 @@ SRC_FILES += \
 	$(SDK_ROOT)/modules/nrfx/drivers/src/prs/nrfx_prs.c \
 	$(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_uart.c \
 	$(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_uarte.c \
-	$(PROJ_DIR)/cli.c \
-	$(PROJ_DIR)/main.c \
-	$(SDK_ROOT)/modules/nrfx/mdk/system_nrf52840.c \
+	$(SDK_ROOT)/modules/nrfx/mdk/system_nrf52833.c \
 
 # Include folders common to all targets
 INC_FOLDERS += \
 	./inc \
+	../Flash_Storage/inc \
 	$(SDK_ROOT)/components/libraries/cli \
 	$(SDK_ROOT)/modules/nrfx/mdk \
 	$(SDK_ROOT)/components/libraries/scheduler \
@@ -94,28 +94,30 @@ INC_FOLDERS += \
 LIB_FILES += \
 
 # Optimization flags
-OPT = -O3 -g3
+OPT = -Os -g3
+
 # Uncomment the line below to enable link time optimization
-#OPT += -flto
+OPT += -flto
 
 # C flags common to all targets
 CFLAGS += $(OPT)
 CFLAGS += -DAPP_TIMER_V2
 CFLAGS += -DAPP_TIMER_V2_RTC1_ENABLED
-CFLAGS += -DBOARD_PCA10056
 CFLAGS += -DCONFIG_GPIO_AS_PINRESET
 CFLAGS += -DFLOAT_ABI_HARD
-CFLAGS += -DNRF52840_XXAA
+CFLAGS += -DNRF52833_XXAA
 CFLAGS += -mcpu=cortex-m4
 CFLAGS += -mthumb -mabi=aapcs
 CFLAGS += -Wall -Werror
 CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
+
 # keep every function in a separate section, this allows linker to discard unused ones
 CFLAGS += -ffunction-sections -fdata-sections -fno-strict-aliasing
 CFLAGS += -fno-builtin -fshort-enums
 
 # C++ flags common to all targets
 CXXFLAGS += $(OPT)
+
 # Assembler flags common to all targets
 ASMFLAGS += -g3
 ASMFLAGS += -mcpu=cortex-m4
@@ -123,10 +125,9 @@ ASMFLAGS += -mthumb -mabi=aapcs
 ASMFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 ASMFLAGS += -DAPP_TIMER_V2
 ASMFLAGS += -DAPP_TIMER_V2_RTC1_ENABLED
-ASMFLAGS += -DBOARD_PCA10056
 ASMFLAGS += -DCONFIG_GPIO_AS_PINRESET
 ASMFLAGS += -DFLOAT_ABI_HARD
-ASMFLAGS += -DNRF52840_XXAA
+ASMFLAGS += -DNRF52833_XXAA
 
 # Linker flags
 LDFLAGS += $(OPT)
