@@ -10,8 +10,7 @@ int main(void)
 
     while (1)
     {
-        NRF_LOG_INFO("deez nuts");
-        NRF_LOG_PROCESS();
+        GL_LOG("deez nuts\n");
 
         nrf_delay_ms(500);
     }

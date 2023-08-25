@@ -24,7 +24,16 @@ ALWAYS_INLINE void GL_LOG_INIT(void)
     }
 }
 
-#define GL_LOG(fmt, ...)    NRF_LOG_INFO(fmt, ##__VA_ARGS__)
+// #define GL_LOG(fmt, ...)    ( NRF_LOG_INFO(fmt, ##__VA_ARGS__); NRF_LOG_PROCESS() )
+#define GL_LOG(fmt, ...)                        \
+    do                                          \
+    {                                           \
+        NRF_LOG_RAW_INFO(fmt, ##__VA_ARGS__);   \
+        NRF_LOG_PROCESS();                      \
+    }                                           \
+    while (0)
+
+
 
 #else
 // Application
