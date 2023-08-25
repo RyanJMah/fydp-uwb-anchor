@@ -29,6 +29,7 @@ ALWAYS_INLINE void GL_LOG_INIT(void)
     do                                          \
     {                                           \
         NRF_LOG_RAW_INFO(fmt, ##__VA_ARGS__);   \
+        NRF_LOG_RAW_INFO("\n");                 \
         NRF_LOG_PROCESS();                      \
     }                                           \
     while (0)

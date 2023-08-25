@@ -6,7 +6,6 @@
 #include "custom_board.h"
 #include "w5500.h"
 #include "nrf_delay.h"
-#include "nrf_drv_gpiote.h"
 #include "app_mqtt.h"
 #include "mqtt_client.h"
 #include "lan.h"
