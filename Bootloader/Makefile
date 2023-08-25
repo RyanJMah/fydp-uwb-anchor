@@ -1,15 +1,11 @@
-PROJECT_NAME     := flash_fds_blank_pca10056
-TARGETS          := nrf52840_xxaa
-OUTPUT_DIRECTORY := _build
+TARGET           := gl_bootloader
+OUTPUT_DIRECTORY := build
 
 SDK_ROOT := ../SDK_BSP/Nordic/NORDIC_SDK_17_1_0
+PROJ_DIR := ./src
 
-SRC_FILES += $(wildcard ./src/*.c)
-
-INC_FOLDERS += ./inc
-
-$(OUTPUT_DIRECTORY)/nrf52840_xxaa.out: \
-	LINKER_SCRIPT := flash_fds_gcc_nrf52.ld
+$(OUTPUT_DIRECTORY)/$(TARGET).out: \
+	LINKER_SCRIPT  := ./gl_bootloader_nrf52.ld
 
 # Source files common to all targets
 SRC_FILES += \
@@ -26,9 +22,7 @@ SRC_FILES += \
 	$(SDK_ROOT)/components/libraries/scheduler/app_scheduler.c \
 	$(SDK_ROOT)/components/libraries/timer/app_timer2.c \
 	$(SDK_ROOT)/components/libraries/util/app_util_platform.c \
-	$(SDK_ROOT)/components/libraries/crc16/crc16.c \
 	$(SDK_ROOT)/components/libraries/timer/drv_rtc.c \
-	$(SDK_ROOT)/components/libraries/fds/fds.c \
 	$(SDK_ROOT)/external/fnmatch/fnmatch.c \
 	$(SDK_ROOT)/components/libraries/util/nrf_assert.c \
 	$(SDK_ROOT)/components/libraries/atomic_fifo/nrf_atfifo.c \
@@ -63,6 +57,7 @@ SRC_FILES += \
 
 # Include folders common to all targets
 INC_FOLDERS += \
+	./inc \
 	$(SDK_ROOT)/components/libraries/cli \
 	$(SDK_ROOT)/modules/nrfx/mdk \
 	$(SDK_ROOT)/components/libraries/scheduler \
@@ -71,9 +66,8 @@ INC_FOLDERS += \
 	$(SDK_ROOT)/components/libraries/pwr_mgmt \
 	$(SDK_ROOT)/components/boards \
 	$(SDK_ROOT)/components/libraries/strerror \
-	$(SDK_ROOT)/components/libraries/crc16 \
-	$(SDK_ROOT)/components/libraries/timer \
 	$(SDK_ROOT)/components/toolchain/cmsis/include \
+	$(SDK_ROOT)/components/libraries/timer \
 	$(SDK_ROOT)/components/libraries/util \
 	$(SDK_ROOT)/components/libraries/balloc \
 	$(SDK_ROOT)/components/libraries/ringbuf \
@@ -91,7 +85,6 @@ INC_FOLDERS += \
 	$(SDK_ROOT)/components/libraries/atomic \
 	$(SDK_ROOT)/components/libraries/sortlist \
 	$(SDK_ROOT)/components/libraries/memobj \
-	$(SDK_ROOT)/components/libraries/fds \
 	$(SDK_ROOT)/modules/nrfx/drivers/include \
 	$(SDK_ROOT)/modules/nrfx/hal \
 	$(SDK_ROOT)/external/fprintf \
@@ -101,9 +94,9 @@ INC_FOLDERS += \
 LIB_FILES += \
 
 # Optimization flags
-OPT = -Os -g3
+OPT = -O3 -g3
 # Uncomment the line below to enable link time optimization
-OPT += -flto
+#OPT += -flto
 
 # C flags common to all targets
 CFLAGS += $(OPT)
@@ -117,14 +110,12 @@ CFLAGS += -mcpu=cortex-m4
 CFLAGS += -mthumb -mabi=aapcs
 CFLAGS += -Wall -Werror
 CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
-
 # keep every function in a separate section, this allows linker to discard unused ones
 CFLAGS += -ffunction-sections -fdata-sections -fno-strict-aliasing
 CFLAGS += -fno-builtin -fshort-enums
 
 # C++ flags common to all targets
 CXXFLAGS += $(OPT)
-
 # Assembler flags common to all targets
 ASMFLAGS += -g3
 ASMFLAGS += -mcpu=cortex-m4
@@ -142,16 +133,15 @@ LDFLAGS += $(OPT)
 LDFLAGS += -mthumb -mabi=aapcs -L$(SDK_ROOT)/modules/nrfx/mdk -T$(LINKER_SCRIPT)
 LDFLAGS += -mcpu=cortex-m4
 LDFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
-
 # let linker dump unused sections
 LDFLAGS += -Wl,--gc-sections
 # use newlib in nano version
 LDFLAGS += --specs=nano.specs
 
-nrf52840_xxaa: CFLAGS += -D__HEAP_SIZE=512
-nrf52840_xxaa: CFLAGS += -D__STACK_SIZE=16384
-nrf52840_xxaa: ASMFLAGS += -D__HEAP_SIZE=512
-nrf52840_xxaa: ASMFLAGS += -D__STACK_SIZE=16384
+$(TARGET): CFLAGS += -D__HEAP_SIZE=8192
+$(TARGET): CFLAGS += -D__STACK_SIZE=8192
+$(TARGET): ASMFLAGS += -D__HEAP_SIZE=8192
+$(TARGET): ASMFLAGS += -D__STACK_SIZE=8192
 
 # Add standard libraries at the very end of the linker input, after all objects
 # that may need symbols provided by these libraries.
@@ -161,28 +151,28 @@ LIB_FILES += -lc -lnosys -lm
 .PHONY: default help
 
 # Default target - first one defined
-default: nrf52840_xxaa
+default: $(TARGET)
 
 # Print all targets that can be built
 help:
 	@echo following targets are available:
-	@echo   nrf52840_xxaa
-	@echo   sdk_config  - starting external tool for editing sdk_config.h
-	@echo   flash       - flashing binary
+	@echo           $(TARGET)
+	@echo           sdk_config - starting external tool for editing sdk_config.h
+	@echo           flash      - flashing binary
 
 TEMPLATE_PATH := $(SDK_ROOT)/components/toolchain/gcc
 
 
 include $(TEMPLATE_PATH)/Makefile.common
 
-$(foreach target, $(TARGETS), $(call define_target, $(target)))
+$(foreach target, $(TARGET), $(call define_target, $(target)))
 
 .PHONY: flash erase
 
 # Flash the program
 flash: default
-	@echo Flashing: $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex
-	nrfjprog -f nrf52 --program $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --sectorerase
+	@echo Flashing: $(OUTPUT_DIRECTORY)/$(TARGET).hex
+	nrfjprog -f nrf52 --program $(OUTPUT_DIRECTORY)/$(TARGET).hex --sectorerase
 	nrfjprog -f nrf52 --reset
 
 erase:
