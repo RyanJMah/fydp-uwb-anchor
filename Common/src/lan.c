@@ -1,7 +1,5 @@
 #include <stdbool.h>
-#include "cmsis_os.h"
 #include "macros.h"
-#include "int_priority.h"
 #include "custom_board.h"
 #include "nrf_delay.h"
 #include "nrf_drv_gpiote.h"
@@ -12,22 +10,39 @@
 #include "gl_log.h"
 #include "lan.h"
 
+#ifdef GL_BOOTLOADER
+    #define PRIO_GPIOTE_IRQn    ( 0 )
+#else
+    #include "cmsis_os.h"
+    #include "int_priority.h"
+#endif
+
+
 /*************************************************************
  * MACROS
  ************************************************************/
+
+// Bootloader is baremetal, so doesn't need mutex
+#define NEEDS_MUTEX             ( !defined(GL_BOOTLOADER) )
+
+#if NEEDS_MUTEX
 #define MUTEX_WAIT_TIMEOUT_MS   ( 500 )
+#endif
 
 /*************************************************************
  * PRIVATE VARIABLES
  ************************************************************/
 static uint16_t g_internal_port = 50000;
 
+#if NEEDS_MUTEX
 static osMutexDef(g_lan_mutex);     // Declare mutex
 static osMutexId (g_lan_mutex_id);  // Mutex ID
+#endif
 
 /*************************************************************
  * PRIVATE FUNCTIONS
  ************************************************************/
+#if NEEDS_MUTEX
 static ALWAYS_INLINE bool _take_mutex(void)
 {
     return osMutexWait(g_lan_mutex_id, MUTEX_WAIT_TIMEOUT_MS) == osOK;
@@ -37,6 +52,7 @@ static ALWAYS_INLINE void _release_mutex(void)
 {
     osMutexRelease(g_lan_mutex_id);
 }
+#endif
 
 static ALWAYS_INLINE void _init_reset_pin(void)
 {
@@ -109,7 +125,9 @@ void LAN_Init(nrfx_gpiote_evt_handler_t isr_func)
 {
     GL_LOG("Initializing ethernet...\n");
 
+    #if NEEDS_MUTEX
     g_lan_mutex_id = osMutexCreate( osMutex(g_lan_mutex) );
+    #endif
 
     // Make sure GPIO is initialized
     nrf_drv_gpiote_init();
@@ -130,7 +148,10 @@ void LAN_Init(nrfx_gpiote_evt_handler_t isr_func)
 int16_t LAN_Connect(sock_t sock, ipv4_addr_t addr, uint16_t port)
 {
     int16_t err_code;
-    bool    mutex_taken = _take_mutex();
+
+    #if NEEDS_MUTEX
+    bool mutex_taken = _take_mutex();
+    #endif
 
     GL_LOG("creating socket...\n");
 
@@ -148,35 +169,48 @@ int16_t LAN_Connect(sock_t sock, ipv4_addr_t addr, uint16_t port)
     require( err_code == SOCK_OK, exit );
 
 exit:
+    #if NEEDS_MUTEX
     if ( mutex_taken )
     {
         _release_mutex();
     }
+    #endif
+
     return err_code;
 }
 
 int32_t LAN_Send(sock_t sock, uint8_t* data, uint32_t len)
 {
+    #if NEEDS_MUTEX
     bool mutex_taken = _take_mutex();
+    #endif
 
     int32_t ret = send(sock, data, len);
 
+    #if NEEDS_MUTEX
     if ( mutex_taken )
     {
         _release_mutex();
     }
+    #endif
+
     return ret;
 }
 
 int32_t LAN_Recv(sock_t sock, uint8_t* out_data, uint32_t len)
 {
+    #if NEEDS_MUTEX
     bool mutex_taken = _take_mutex();
+    #endif
 
     int32_t ret = recv(sock, out_data, len);
 
+    #if NEEDS_MUTEX
     if ( mutex_taken )
     {
         _release_mutex();
     }
+    #endif
+
     return ret;
 }

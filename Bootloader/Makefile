@@ -60,6 +60,7 @@ SRC_FILES += \
 	$(SDK_ROOT)/modules/nrfx/drivers/src/prs/nrfx_prs.c \
 	$(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_uart.c \
 	$(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_uarte.c \
+	$(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_gpiote.c \
 	$(SDK_ROOT)/modules/nrfx/mdk/system_nrf52833.c \
 	$(SDK_ROOT)/external/segger_rtt/SEGGER_RTT.c \
 	$(SDK_ROOT)/external/segger_rtt/SEGGER_RTT_Syscalls_GCC.c \
@@ -73,6 +74,7 @@ INC_FOLDERS += \
 	../Wiznet \
 	../Wiznet/ioLibrary_Driver/Ethernet \
 	../Wiznet/ioLibrary_Driver/Ethernet/W5500 \
+	../Src/Boards/Inc \
 	../Src/Boards/Src/DWM3001CDK/FreeRTOS/Common \
 	$(SDK_ROOT)/components/libraries/cli \
 	$(SDK_ROOT)/modules/nrfx/mdk \
@@ -113,7 +115,7 @@ INC_FOLDERS += \
 LIB_FILES += \
 
 # Optimization flags
-OPT = -O0 -g3
+OPT = -Os -g3
 
 # Uncomment the line below to enable link time optimization
 OPT += -flto

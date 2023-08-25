@@ -310,10 +310,6 @@
         <file file_name="../../../../../Src/UWBUtils/translate.c" />
       </folder>
 
-      <folder Name="LAN">
-        <file file_name="../../../../../Src/LAN/lan.c" />
-      </folder>
-
       <folder Name="LANTask">
         <file file_name="../../../../../Src/LANTask/lan_task.c" />
       </folder>
@@ -450,6 +446,10 @@
       <file file_name="../../../../../Wiznet/ioLibrary_Driver/Ethernet/socket.c" />
       <file file_name="../../../../../Wiznet/ioLibrary_Driver/Ethernet/wizchip_conf.c" />
       <file file_name="../../../../../Wiznet/ioLibrary_Driver/Ethernet/W5500/w5500.c" />
+    </folder>
+
+    <folder Name="Common">
+      <file file_name="../../../../../Common/src/lan.c" />
     </folder>
 
     <folder Name="coreMQTT">

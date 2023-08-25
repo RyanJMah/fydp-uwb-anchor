@@ -1,4 +1,5 @@
 #include "gl_log.h"
+#include "socket.h"
 #include "flash_memory_map.h"
 
 #include "nrf_delay.h"
