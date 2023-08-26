@@ -10,7 +10,7 @@
 
 #define ANCHOR_MAC_ADDR             {0x00, 0x08, 0xdc, 0x00, 0xab, ANCHOR_ID}
 
-#define ANCHOR_LAN_USING_DHCP       0
+#define ANCHOR_LAN_USING_DHCP       1
 
 #if !ANCHOR_LAN_USING_DHCP
 #define ANCHOR_LAN_IP_ADDR          {192, 168, 8, 3 + ANCHOR_ID}

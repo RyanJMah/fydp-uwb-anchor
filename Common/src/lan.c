@@ -43,8 +43,8 @@ static uint8_t g_dhcp_buf[DHCP_BUF_SIZE];
 static wiz_NetInfo g_net_info =
 {
     .mac = ANCHOR_MAC_ADDR,
-    .sn = ANCHOR_LAN_SUBNET_MASK,
-    .gw   = ANCHOR_LAN_GW_ADDR,
+    // .sn = ANCHOR_LAN_SUBNET_MASK,
+    // .gw   = ANCHOR_LAN_GW_ADDR,
 
 #if !ANCHOR_LAN_USING_DHCP
     .ip = ANCHOR_LAN_IP_ADDR,
@@ -140,7 +140,7 @@ static ALWAYS_INLINE void _init_interrupts(nrfx_gpiote_evt_handler_t isr_func)
     nrf_delay_ms(100);
 }
 
-static void _print_net_info(void)
+static ALWAYS_INLINE void _print_net_info(void)
 {
     memset( &g_net_info, 0, sizeof(g_net_info) );
     wizchip_getnetinfo( &g_net_info );
@@ -167,7 +167,7 @@ static void _print_net_info(void)
     GL_LOG("======================\r\n\n");
 }
 
-static void _network_init(void)
+static ALWAYS_INLINE void _network_init(void)
 {
     ctlnetwork(CN_SET_NETINFO, (void*)&g_net_info);
 
@@ -177,6 +177,36 @@ static void _network_init(void)
 static ALWAYS_INLINE void _get_ip_via_dhcp(void)
 {
     DHCP_init( DHCP_SOCK_NUM, g_dhcp_buf );
+
+    int8_t ret_code;
+
+    while (1)
+    {
+        ret_code = DHCP_run();
+
+        if ( ret_code == DHCP_IP_LEASED )
+        {
+            GL_LOG("DHCP IP ASSIGNED\r\n");
+            _print_net_info();
+            break;
+        }
+        else if ( ret_code == DHCP_FAILED )
+        {
+            GL_LOG("DHCP FAILED, retrying in 5 seconds...\r\n");
+            nrf_delay_ms(5000);
+            continue;
+        }
+    }
+
+    /*
+     * This is technically not how we should be doing DCHP, we should always
+     * be running DHCP because the lease can expire, etc.
+     *
+     * In the application code, we can do this in the LAN task.
+     *
+     * In the bootloader, we are gonna just get our IP address then dip.
+     */
+    DHCP_stop();
 }
 
 /*************************************************************
@@ -203,6 +233,7 @@ void LAN_Init(nrfx_gpiote_evt_handler_t isr_func)
     user_ethernet_init();
 
     _network_init();
+    _get_ip_via_dhcp();
 
     _init_interrupts( isr_func );
 
@@ -278,3 +309,5 @@ int32_t LAN_Recv(sock_t sock, uint8_t* out_data, uint32_t len)
 
     return ret;
 }
+
+
