@@ -204,7 +204,7 @@ $(foreach target, $(TARGET), $(call define_target, $(target)))
 # Flash the program
 flash: default
 	@echo Flashing: $(OUTPUT_DIRECTORY)/$(TARGET).hex
-	nrfjprog -f nrf52 --program $(OUTPUT_DIRECTORY)/$(TARGET).hex --sectorerase
+	nrfjprog -f nrf52 --program $(OUTPUT_DIRECTORY)/$(TARGET).hex --sectorerase --verify
 	nrfjprog -f nrf52 --reset
 
 flash_erase:

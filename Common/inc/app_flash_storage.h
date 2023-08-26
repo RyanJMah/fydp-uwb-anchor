@@ -1,11 +1,21 @@
 #pragma once
 
 #include "sdk_errors.h"
+
+#include "lan.h"
 #include "flash_memory_map.h"
+
+/*************************************************************
+ * MACROS
+ ************************************************************/
+#define NUM_FALLACK_SERVERS     ( 10 )
 
 /*************************************************************
  * TYPE DEFINITIONS
  ************************************************************/
+
+// IMPORTANT: Modify ./Scripts/generate_flash_config_bin.py if you change this struct.
+
 typedef struct __attribute__((packed))
 {
     /*
@@ -27,11 +37,23 @@ typedef struct __attribute__((packed))
 
     uint8_t anchor_id;
 
+    uint32_t socket_recv_timeout_ms;
+
     uint8_t mac_addr[6];
     uint8_t using_dhcp;
 
+    ipv4_addr_t static_ip_addr;
+    ipv4_addr_t static_netmask;
+    ipv4_addr_t static_gateway;
 
-    uint32_t crc32;             // CRC32 of the entire struct, not including this field
+    /*
+     * Hostname, IP address, and port of server, will try the 0th
+     * one first, then the 1st, etc.
+     */
+    hostname_t  server_hostname[10];
+    ipv4_addr_t server_ip_addr[10];
+    uint32_t    server_port[10];
+
 } AppFlashStorage_t;
 
 

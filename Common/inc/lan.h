@@ -14,6 +14,8 @@
 #define MDNS_SOCK_NUM       ( 2 )
 #define DHCP_SOCK_NUM       ( 3 )
 
+#define MAX_HOSTNAME_CHARS  ( 256 )
+
 /*************************************************************
  * TYPE DEFINITIONS
  ************************************************************/
@@ -23,6 +25,11 @@ typedef struct
 {
     uint8_t bytes[4];
 } ipv4_addr_t;
+
+typedef struct
+{
+    char c[MAX_HOSTNAME_CHARS];
+} hostname_t;
 
 /*************************************************************
  * PUBLIC FUNCTIONS

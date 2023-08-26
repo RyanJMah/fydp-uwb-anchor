@@ -430,7 +430,7 @@ int32_t recv(uint8_t sn, uint8_t * buf, uint16_t len)
         {
             // osSignalWait(LAN_TASK_RECV_INTERRUPT_SIGNAL, osWaitForever);
             // osDelay(1);
-            if ( osKernelSysTick() - start_ticks )
+            if ( (osKernelSysTick() - start_ticks ) > SOCKET_RECV_TIMEOUT )
             {
                 break;
             }

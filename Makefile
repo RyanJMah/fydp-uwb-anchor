@@ -34,6 +34,8 @@ TARGET_ELF     := $(TARGET_BIN_DIR)/DWM3001CDK-QANI-FreeRTOS.elf
 
 SOFTDEVICE_HEX = ./SDK_BSP/Nordic/NORDIC_SDK_17_1_0/components/softdevice/s113/hex/s113_nrf52_7.2.0_softdevice.hex
 
+PROVISIONING_BIN_DIR := ./Provisioning_Images
+
 # fuck windows
 ifeq ($(HOST_OS),Windows)
 	DWM3001CDK_BUILD_DIR := .\\Projects\\QANI\\FreeRTOS\\DWM3001CDK\\ses\\Output
@@ -41,13 +43,22 @@ endif
 
 .PHONY: all
 all:
-	$(call check_defined, ANCHOR_ID, anchor id must be provided)
 	@$(EM_BUILD) -D MAKEFILE_ANCHOR_ID=$(ANCHOR_ID) -echo -config "Common" $(DWM3001CDK_PROJ_XML) 2>&1
 	@$(SIZE) $(TARGET_ELF)
 
 .PHONY: clean
 clean:
 	$(RMDIR) $(DWM3001CDK_BUILD_DIR)
+
+.PHONY: provision
+provision:
+	$(call check_defined, ANCHOR_ID, anchor id must be provided)
+	$(NRFJPROG) --program $(PROVISIONING_BIN_DIR)/a$(ANCHOR_ID).hex --sectorerase --verify
+	$(NRFJPROG) --reset
+
+.PHONY: flash_erase
+flash_erase:
+	$(NRFJPROG) --eraseall
 
 .PHONY: flash
 flash: all
