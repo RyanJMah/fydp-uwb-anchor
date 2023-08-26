@@ -12,6 +12,7 @@
 
 #define MQTT_SOCK_NUM       ( 1 )
 #define MDNS_SOCK_NUM       ( 2 )
+#define DHCP_SOCK_NUM       ( 3 )
 
 /*************************************************************
  * TYPE DEFINITIONS

@@ -5,9 +5,12 @@
 #include "nrf_drv_gpiote.h"
 #include "user_ethernet.h"
 #include "user_spi.h"
+#include "wizchip_conf.h"
 #include "w5500.h"
 #include "socket.h"
+#include "dhcp.h"
 #include "gl_log.h"
+#include "anchor_config.h"
 #include "lan.h"
 
 #ifdef GL_BOOTLOADER
@@ -21,7 +24,6 @@
 /*************************************************************
  * MACROS
  ************************************************************/
-
 // Bootloader is baremetal, so doesn't need mutex
 #define NEEDS_MUTEX             ( !defined(GL_BOOTLOADER) )
 
@@ -29,10 +31,31 @@
 #define MUTEX_WAIT_TIMEOUT_MS   ( 500 )
 #endif
 
+#define DHCP_BUF_SIZE           ( 1024*2 )
+
 /*************************************************************
  * PRIVATE VARIABLES
  ************************************************************/
 static uint16_t g_internal_port = 50000;
+
+static uint8_t g_dhcp_buf[DHCP_BUF_SIZE];
+
+static wiz_NetInfo g_net_info =
+{
+    .mac = ANCHOR_MAC_ADDR,
+    .sn = ANCHOR_LAN_SUBNET_MASK,
+    .gw   = ANCHOR_LAN_GW_ADDR,
+
+#if !ANCHOR_LAN_USING_DHCP
+    .ip = ANCHOR_LAN_IP_ADDR,
+#endif
+
+#if ANCHOR_USE_DHCP
+    .dhcp = NETINFO_DHCP
+#else
+    .dhcp = NETINFO_STATIC
+#endif
+};
 
 #if NEEDS_MUTEX
 static osMutexDef(g_lan_mutex);     // Declare mutex
@@ -117,6 +140,45 @@ static ALWAYS_INLINE void _init_interrupts(nrfx_gpiote_evt_handler_t isr_func)
     nrf_delay_ms(100);
 }
 
+static void _print_net_info(void)
+{
+    memset( &g_net_info, 0, sizeof(g_net_info) );
+    wizchip_getnetinfo( &g_net_info );
+
+    GL_LOG("\r\nNETWORK CONFIGURATION:\r\n");
+    GL_LOG("======================\r\n");
+
+    GL_LOG( "MAC Address: %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+            g_net_info.mac[0], g_net_info.mac[1], g_net_info.mac[2],
+            g_net_info.mac[3], g_net_info.mac[4], g_net_info.mac[5] );
+
+    GL_LOG( "IP Address:  %d.%d.%d.%d\r\n",
+            g_net_info.ip[0], g_net_info.ip[1], g_net_info.ip[2], g_net_info.ip[3] );
+
+    GL_LOG( "Gateway:     %d.%d.%d.%d\r\n",
+            g_net_info.gw[0], g_net_info.gw[1], g_net_info.gw[2], g_net_info.gw[3] );
+
+    GL_LOG( "Subnet Mask: %d.%d.%d.%d\r\n",
+            g_net_info.sn[0], g_net_info.sn[1], g_net_info.sn[2], g_net_info.sn[3] );
+
+    GL_LOG( "DNS Server:  %d.%d.%d.%d\r\n",
+            g_net_info.dns[0], g_net_info.dns[1], g_net_info.dns[2], g_net_info.dns[3]);
+
+    GL_LOG("======================\r\n\n");
+}
+
+static void _network_init(void)
+{
+    ctlnetwork(CN_SET_NETINFO, (void*)&g_net_info);
+
+    _print_net_info();
+}
+
+static ALWAYS_INLINE void _get_ip_via_dhcp(void)
+{
+    DHCP_init( DHCP_SOCK_NUM, g_dhcp_buf );
+}
+
 /*************************************************************
  * PUBLIC FUNCTIONS
  ************************************************************/
@@ -140,6 +202,8 @@ void LAN_Init(nrfx_gpiote_evt_handler_t isr_func)
     spi1_master_init();
     user_ethernet_init();
 
+    _network_init();
+
     _init_interrupts( isr_func );
 
     GL_LOG("Ethernet initialized!\n");
@@ -156,7 +220,7 @@ int16_t LAN_Connect(sock_t sock, ipv4_addr_t addr, uint16_t port)
     GL_LOG("creating socket...\n");
 
     err_code = socket( sock, Sn_MR_TCP, g_internal_port++, 0 );
-    require( err_code == SOCK_OK, exit );
+    require( err_code > 0, exit );
 
     GL_LOG(
             "connecting to server hosted at %d.%d.%d.%d\n",
@@ -166,7 +230,7 @@ int16_t LAN_Connect(sock_t sock, ipv4_addr_t addr, uint16_t port)
             addr.bytes[3] );
 
     err_code = connect(sock, addr.bytes, port);
-    require( err_code == SOCK_OK, exit );
+    require( err_code > 0, exit );
 
 exit:
     #if NEEDS_MUTEX

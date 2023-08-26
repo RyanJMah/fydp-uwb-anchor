@@ -14,7 +14,8 @@ SRC_FILES += \
 	../Wiznet/user_spi.c \
 	../Wiznet/ioLibrary_Driver/Ethernet/socket.c \
 	../Wiznet/ioLibrary_Driver/Ethernet/wizchip_conf.c \
-	../Wiznet/ioLibrary_Driver/Ethernet/W5500/w5500.c
+	../Wiznet/ioLibrary_Driver/Ethernet/W5500/w5500.c \
+	../Wiznet/ioLibrary_Driver/Internet/DHCP/dhcp.c
 
 # Source files common to all targets
 SRC_FILES += \
@@ -74,6 +75,7 @@ INC_FOLDERS += \
 	../Wiznet \
 	../Wiznet/ioLibrary_Driver/Ethernet \
 	../Wiznet/ioLibrary_Driver/Ethernet/W5500 \
+	../Wiznet/ioLibrary_Driver/Internet/DHCP \
 	../Src/Boards/Inc \
 	../Src/Boards/Src/DWM3001CDK/FreeRTOS/Common \
 	$(SDK_ROOT)/components/libraries/cli \
