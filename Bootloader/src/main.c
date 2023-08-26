@@ -1,6 +1,6 @@
 #include "gl_log.h"
 #include "lan.h"
-#include "flash_memory_map.h"
+#include "flash_config_data.h"
 
 #include "anchor_config.h"
 
@@ -19,6 +19,9 @@ static uint8_t msg[] = "Hello World!";
 int main(void)
 {
     GL_LOG_INIT();
+
+    GL_LOG("Reading config data from flash...\n");
+    FlashConfigData_Init();
 
     GL_LOG("Initializing lan...\n");
     LAN_Init( w5500_isr );

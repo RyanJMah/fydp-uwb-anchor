@@ -54,19 +54,23 @@ typedef struct __attribute__((packed))
     ipv4_addr_t server_ip_addr[10];
     uint32_t    server_port[10];
 
-} AppFlashStorage_t;
+} FlashConfigData_t;
 
 
 /*************************************************************
  * GLOBAL VARIABLES
  ************************************************************/
-extern AppFlashStorage_t g_config;
+extern FlashConfigData_t g_config;
 
 /*************************************************************
  * PUBLIC FUNCTIONS
  ************************************************************/
-ret_code_t AppFlashStorage_Init(void);
+ret_code_t FlashConfigData_Init(void);
 
-ret_code_t AppFlashStorage_WriteBack(void);
+uint8_t FlashConfigData_IsInitalized(void);
 
-ret_code_t AppFlashStorage_RestoreFromSwap(void);
+void FlashConfigData_Print(void);
+
+ret_code_t FlashConfigData_WriteBack(void);
+
+ret_code_t FlashConfigData_RestoreFromSwap(void);

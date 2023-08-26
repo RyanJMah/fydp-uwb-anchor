@@ -1,4 +1,5 @@
 import os
+import sys
 from ctypes import LittleEndianStructure, c_uint32, c_uint8, c_char
 from intelhex import bin2hex
 
@@ -82,11 +83,11 @@ def main():
 
     fw_update_pending = 0
 
-    anchor_id = 2
+    anchor_id = int(sys.argv[-1])
 
     socket_recv_timeout_ms = 5000
 
-    mac_addr = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+    mac_addr = [0x00, 0x08, 0xdc, 0x00, 0xab, anchor_id]
     using_dhcp = 1
 
     static_ip_addr = [192, 168, 8, 3 + anchor_id]

@@ -10,7 +10,7 @@
 #include "socket.h"
 #include "dhcp.h"
 #include "gl_log.h"
-#include "anchor_config.h"
+#include "flash_config_data.h"
 #include "lan.h"
 
 #ifdef GL_BOOTLOADER
@@ -40,22 +40,7 @@ static uint16_t g_internal_port = 50000;
 
 static uint8_t g_dhcp_buf[DHCP_BUF_SIZE];
 
-static wiz_NetInfo g_net_info =
-{
-    .mac = ANCHOR_MAC_ADDR,
-    // .sn = ANCHOR_LAN_SUBNET_MASK,
-    // .gw   = ANCHOR_LAN_GW_ADDR,
-
-#if !ANCHOR_LAN_USING_DHCP
-    .ip = ANCHOR_LAN_IP_ADDR,
-#endif
-
-#if ANCHOR_USE_DHCP
-    .dhcp = NETINFO_DHCP
-#else
-    .dhcp = NETINFO_STATIC
-#endif
-};
+static wiz_NetInfo g_net_info;
 
 #if NEEDS_MUTEX
 static osMutexDef(g_lan_mutex);     // Declare mutex
@@ -169,9 +154,26 @@ static ALWAYS_INLINE void _print_net_info(void)
 
 static ALWAYS_INLINE void _network_init(void)
 {
+    memset( &g_net_info, 0, sizeof(g_net_info) );
+
+    memcpy( g_net_info.mac, g_config.mac_addr, sizeof(g_net_info.mac) );
+
+    if ( g_config.using_dhcp )
+    {
+        g_net_info.dhcp = NETINFO_DHCP;
+    }
+    else
+    {
+        g_net_info.dhcp = NETINFO_STATIC;
+
+        memcpy( g_net_info.ip, g_config.static_ip_addr.bytes, sizeof(g_net_info.ip) );
+        memcpy( g_net_info.gw, g_config.static_gateway.bytes, sizeof(g_net_info.gw) );
+        memcpy( g_net_info.sn, g_config.static_netmask.bytes, sizeof(g_net_info.sn) );
+    }
+
     ctlnetwork(CN_SET_NETINFO, (void*)&g_net_info);
 
-    _print_net_info();
+    // _print_net_info();
 }
 
 static ALWAYS_INLINE void _get_ip_via_dhcp(void)
@@ -187,7 +189,6 @@ static ALWAYS_INLINE void _get_ip_via_dhcp(void)
         if ( ret_code == DHCP_IP_LEASED )
         {
             GL_LOG("DHCP IP ASSIGNED\r\n");
-            _print_net_info();
             break;
         }
         else if ( ret_code == DHCP_FAILED )
@@ -233,7 +234,11 @@ void LAN_Init(nrfx_gpiote_evt_handler_t isr_func)
     user_ethernet_init();
 
     _network_init();
-    _get_ip_via_dhcp();
+
+    if ( g_config.using_dhcp )
+    {
+        _get_ip_via_dhcp();
+    }
 
     _init_interrupts( isr_func );
 

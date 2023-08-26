@@ -11,7 +11,7 @@
     do                                          \
     {                                           \
         NRF_LOG_RAW_INFO(fmt, ##__VA_ARGS__);   \
-        NRF_LOG_PROCESS();                      \
+        NRF_LOG_FLUSH();                        \
     }                                           \
     while (0)
 

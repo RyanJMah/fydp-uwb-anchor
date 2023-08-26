@@ -36,6 +36,10 @@ SOFTDEVICE_HEX = ./SDK_BSP/Nordic/NORDIC_SDK_17_1_0/components/softdevice/s113/h
 
 PROVISIONING_BIN_DIR := ./Provisioning_Images
 
+define generate_provisioning_image
+	@python3 Scripts/generate_flash_config_bin.py $(1)
+endef
+
 # fuck windows
 ifeq ($(HOST_OS),Windows)
 	DWM3001CDK_BUILD_DIR := .\\Projects\\QANI\\FreeRTOS\\DWM3001CDK\\ses\\Output
@@ -53,6 +57,7 @@ clean:
 .PHONY: provision
 provision:
 	$(call check_defined, ANCHOR_ID, anchor id must be provided)
+	$(call generate_provisioning_image, $(ANCHOR_ID))
 	$(NRFJPROG) --program $(PROVISIONING_BIN_DIR)/a$(ANCHOR_ID).hex --sectorerase --verify
 	$(NRFJPROG) --reset
 
