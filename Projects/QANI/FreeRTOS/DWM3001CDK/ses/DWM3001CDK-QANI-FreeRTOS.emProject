@@ -451,6 +451,7 @@
 
     <folder Name="Common">
       <file file_name="../../../../../Common/src/lan.c" />
+      <file file_name="../../../../../Common/src/flash_config_data.c" />
     </folder>
 
     <folder Name="coreMQTT">

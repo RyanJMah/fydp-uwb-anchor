@@ -67,8 +67,7 @@ flash_erase:
 
 .PHONY: flash
 flash: all
-	$(NRFJPROG) --eraseall
-	$(NRFJPROG) --program $(TARGET_HEX) --verify
+	$(NRFJPROG) --program $(TARGET_HEX) --sectorerase --verify
 	$(NRFJPROG) --reset
 
 .PHONY: flash_sd
