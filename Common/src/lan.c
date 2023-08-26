@@ -125,33 +125,6 @@ static ALWAYS_INLINE void _init_interrupts(nrfx_gpiote_evt_handler_t isr_func)
     nrf_delay_ms(100);
 }
 
-static ALWAYS_INLINE void _print_net_info(void)
-{
-    memset( &g_net_info, 0, sizeof(g_net_info) );
-    wizchip_getnetinfo( &g_net_info );
-
-    GL_LOG("\r\nNETWORK CONFIGURATION:\r\n");
-    GL_LOG("======================\r\n");
-
-    GL_LOG( "MAC Address: %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-            g_net_info.mac[0], g_net_info.mac[1], g_net_info.mac[2],
-            g_net_info.mac[3], g_net_info.mac[4], g_net_info.mac[5] );
-
-    GL_LOG( "IP Address:  %d.%d.%d.%d\r\n",
-            g_net_info.ip[0], g_net_info.ip[1], g_net_info.ip[2], g_net_info.ip[3] );
-
-    GL_LOG( "Gateway:     %d.%d.%d.%d\r\n",
-            g_net_info.gw[0], g_net_info.gw[1], g_net_info.gw[2], g_net_info.gw[3] );
-
-    GL_LOG( "Subnet Mask: %d.%d.%d.%d\r\n",
-            g_net_info.sn[0], g_net_info.sn[1], g_net_info.sn[2], g_net_info.sn[3] );
-
-    GL_LOG( "DNS Server:  %d.%d.%d.%d\r\n",
-            g_net_info.dns[0], g_net_info.dns[1], g_net_info.dns[2], g_net_info.dns[3]);
-
-    GL_LOG("======================\r\n\n");
-}
-
 static ALWAYS_INLINE void _network_init(void)
 {
     memset( &g_net_info, 0, sizeof(g_net_info) );
