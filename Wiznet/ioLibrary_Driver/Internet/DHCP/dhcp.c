@@ -574,7 +574,7 @@ int8_t parseDHCPMSG(void)
 
 	uint8_t * p;
 	uint8_t * e;
-	uint8_t type;
+	uint8_t type = 0;
 	uint8_t opt_len;
    
    if((len = getSn_RX_RSR(DHCP_SOCKET)) > 0)
