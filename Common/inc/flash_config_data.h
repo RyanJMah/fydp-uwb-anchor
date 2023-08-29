@@ -29,9 +29,9 @@ typedef struct __attribute__((packed))
      * The page with the highest swap_count will be the considered the
      * "active" page, and the other page will be considered the "swap" page.
      *
-     * It's a uint32_t, so the flash will likely physically fail before we overflow it.
+     * It's a int32_t, so the flash will likely physically fail before we overflow it.
      */
-    uint32_t swap_count;
+    int32_t swap_count;
 
     uint8_t fw_update_pending;  // signal to bootloader that we want to update the firmware
 

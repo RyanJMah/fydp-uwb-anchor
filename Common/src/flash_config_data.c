@@ -64,16 +64,18 @@ ret_code_t FlashConfigData_Init(void)
                                   sizeof(FlashConfigData_t) );
     require_noerr(err_code, exit);
 
-    FlashConfigData_t *p_active_page;
+    FlashConfigData_t *p_active_page = &page1;
 
     if (page1.swap_count > page2.swap_count)
     {
+        GL_LOG("Selecting page1 as the active page and page2 as swap...\n");
         p_active_page      = &page1;
         g_active_page_addr = FLASH_CONFIG_DATA_PAGE1_ADDR;
         g_swap_page_addr   = FLASH_CONFIG_DATA_PAGE2_ADDR;
     }
     else if (page2.swap_count > page1.swap_count)
     {
+        GL_LOG("Selecting page2 as the active page and page1 as swap...\n");
         p_active_page      = &page2;
         g_active_page_addr = FLASH_CONFIG_DATA_PAGE2_ADDR;
         g_swap_page_addr   = FLASH_CONFIG_DATA_PAGE1_ADDR;
@@ -95,29 +97,29 @@ ret_code_t FlashConfigData_Init(void)
     // Mark as initialized
     g_is_initialized = 1;
 
-    // Now that we've read the config data, validate it
-    if ( !FlashConfigData_Validate() )
-    {
-        GL_LOG("ERROR: crc32 of config data is bad, restoring from swap...\n");
+//     // Now that we've read the config data, validate it
+//     if ( !FlashConfigData_Validate() )
+//     {
+//         GL_LOG("ERROR: crc32 of config data is bad, restoring from swap...\n");
 
-        err_code = FlashConfigData_RestoreFromSwap();
-        require_noerr(err_code, exit);
+//         err_code = FlashConfigData_RestoreFromSwap();
+//         require_noerr(err_code, exit);
 
-        // Validate again
-        if ( !FlashConfigData_Validate() )
-        {
-            // If the restore from swap didn't work, there's nothing we can do...
-            GL_LOG("ERROR: crc32 is still bad, please re-provision the device...\n");
+//         // Validate again
+//         if ( !FlashConfigData_Validate() )
+//         {
+//             // If the restore from swap didn't work, there's nothing we can do...
+//             GL_LOG("ERROR: crc32 is still bad, please re-provision the device...\n");
 
-            NRF_LOG_FINAL_FLUSH();
-            while (1)
-            {
-                // Do nothing...
-            }
-        }
-    }
+//             NRF_LOG_FINAL_FLUSH();
+//             while (1)
+//             {
+//                 // Do nothing...
+//             }
+//         }
+//     }
 
-    GL_LOG("Successfully read config data from flash!\n");
+    GL_LOG("Persistent config data good...\n");
     FlashConfigData_Print();
     GL_LOG("\n");
 
@@ -161,6 +163,7 @@ void FlashConfigData_Print(void)
                 p_mac_addr[3], p_mac_addr[4], p_mac_addr[5]  );
 
     GL_LOG("  - using_dhcp:             %d\n", g_persistent_conf.using_dhcp);
+    GL_LOG("  - crc32:                  %08X\n", g_persistent_conf.crc32);
 }
 
 ret_code_t FlashConfigData_WriteBack(void)

@@ -20,6 +20,8 @@ int main(void)
 {
     GL_LOG_INIT();
 
+    GL_LOG("ENTERING BOOTLOADER!\n");
+
     GL_LOG("Reading config data from flash...\n");
     FlashConfigData_Init();
 

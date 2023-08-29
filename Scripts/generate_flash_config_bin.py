@@ -1,13 +1,18 @@
 import os
 import sys
-from ctypes import LittleEndianStructure, c_uint32, c_uint8, c_char
+from ctypes import LittleEndianStructure, c_uint32, c_uint8, c_int32, c_char
 from intelhex import bin2hex
 
 THIS_DIR      = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT_DIR = os.path.dirname(THIS_DIR)
 BIN_DIR       = os.path.join(REPO_ROOT_DIR, "Provisioning_Images")
 
-FLASH_CONFIG_START_ADDR = 0x00005000    # Refer to ./Common/flash_memory_map.h
+FLASH_PAGE_SIZE = 4096
+
+# Refer to ./Common/flash_memory_map.h
+FLASH_CONFIG_START_ADDR = 0x00005000
+FLASH_CONFIG_END_ADDR   = FLASH_CONFIG_START_ADDR + 2*FLASH_PAGE_SIZE
+
 NUM_FALLBACK_SERVERS    = 10
 MAX_HOSTNAME_CHARS      = 256
 
@@ -43,7 +48,7 @@ class Hostname(LittleEndianStructure):
 class FlashConfig(LittleEndianStructure):
     _pack_ = 1
     _fields_ = [
-        ("swap_count",              c_uint32),
+        ("swap_count",              c_int32),
 
         ("fw_update_pending",       c_uint8),
 
@@ -169,15 +174,24 @@ def main():
     # Calculate the CRC32 of the struct
     flash_config.crc32 = crc32(flash_config_bytes)
 
+    # Bytes to write to flash
+    provisioning_bytes = bytes(flash_config)
+
+    # pad with FFs so it spans 2 pages
+    provisioning_bytes += bytes( [0xFF] * (FLASH_CONFIG_END_ADDR - FLASH_CONFIG_START_ADDR - len(provisioning_bytes)) )
+
+    # Write to files
     filename_no_ext = os.path.join(BIN_DIR, f"a{anchor_id}")
 
     bin_filename = filename_no_ext + ".bin"
     hex_filename = filename_no_ext + ".hex"
 
     with open(bin_filename, "wb") as f_bin:
-        f_bin.write( bytes(flash_config) )
+        f_bin.write( provisioning_bytes )
 
     bin2hex(bin_filename, hex_filename, FLASH_CONFIG_START_ADDR)
+
+    print(f"Generated provisioning images {bin_filename} and {hex_filename}")
 
 if __name__ == '__main__':
     main()
