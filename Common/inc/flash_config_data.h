@@ -67,6 +67,9 @@ extern FlashConfigData_t g_persistent_conf;
  ************************************************************/
 ret_code_t FlashConfigData_Init(void);
 
+// Only ever used by bootloader right before jumping to app code
+ret_code_t FlashConfigData_Deinit(void);
+
 uint8_t FlashConfigData_IsInitalized(void);
 
 void FlashConfigData_Print(void);
