@@ -1,5 +1,7 @@
 #include "nrf_fstorage.h"
 #include "nrf_fstorage_nvmc.h"
+#include "nrf_log_ctrl.h"
+#include "crc32.h"
 
 #include "gl_log.h"
 #include "flash_memory_map.h"
@@ -29,14 +31,15 @@ static uint32_t g_swap_page_addr;
 FlashConfigData_t g_persistent_conf;
 
 /*************************************************************
- * PRIVATE FUNCTIONS
- ************************************************************/
-
-/*************************************************************
  * PUBLIC FUNCTIONS
  ************************************************************/
 ret_code_t FlashConfigData_Init(void)
 {
+    if ( g_is_initialized )
+    {
+        return NRF_SUCCESS;
+    }
+
     ret_code_t err_code;
 
     // Initialize the flash storage module
@@ -62,17 +65,18 @@ ret_code_t FlashConfigData_Init(void)
     require_noerr(err_code, exit);
 
     FlashConfigData_t *p_active_page;
+
     if (page1.swap_count > page2.swap_count)
     {
+        p_active_page      = &page1;
         g_active_page_addr = FLASH_CONFIG_DATA_PAGE1_ADDR;
         g_swap_page_addr   = FLASH_CONFIG_DATA_PAGE2_ADDR;
-        p_active_page      = &page1;
     }
     else if (page2.swap_count > page1.swap_count)
     {
+        p_active_page      = &page2;
         g_active_page_addr = FLASH_CONFIG_DATA_PAGE2_ADDR;
         g_swap_page_addr   = FLASH_CONFIG_DATA_PAGE1_ADDR;
-        p_active_page      = &page2;
     }
     else
     {
@@ -80,9 +84,9 @@ ret_code_t FlashConfigData_Init(void)
         GL_LOG("WARNING: Both pages have the same swap count\n");
         GL_LOG("defaulting to page 1 as the active page and page2 as swap...\n");
 
+        p_active_page      = &page1;
         g_active_page_addr = FLASH_CONFIG_DATA_PAGE1_ADDR;
         g_swap_page_addr   = FLASH_CONFIG_DATA_PAGE2_ADDR;
-        p_active_page      = &page1;
     }
 
     // memcpy the active page into the global config
@@ -90,6 +94,28 @@ ret_code_t FlashConfigData_Init(void)
 
     // Mark as initialized
     g_is_initialized = 1;
+
+    // Now that we've read the config data, validate it
+    if ( !FlashConfigData_Validate() )
+    {
+        GL_LOG("ERROR: crc32 of config data is bad, restoring from swap...\n");
+
+        err_code = FlashConfigData_RestoreFromSwap();
+        require_noerr(err_code, exit);
+
+        // Validate again
+        if ( !FlashConfigData_Validate() )
+        {
+            // If the restore from swap didn't work, there's nothing we can do...
+            GL_LOG("ERROR: crc32 is still bad, please re-provision the device...\n");
+
+            NRF_LOG_FINAL_FLUSH();
+            while (1)
+            {
+                // Do nothing...
+            }
+        }
+    }
 
     GL_LOG("Successfully read config data from flash!\n");
     FlashConfigData_Print();
@@ -102,6 +128,21 @@ exit:
 uint8_t FlashConfigData_IsInitalized(void)
 {
     return g_is_initialized;
+}
+
+uint8_t FlashConfigData_Validate(void)
+{
+    if ( !g_is_initialized )
+    {
+        return 0;
+    }
+
+    // Compute the crc32 of the config data, excluding the crc32 field
+    uint32_t crc = crc32_compute( (uint8_t*)&g_persistent_conf,
+                                  sizeof(FlashConfigData_t) - sizeof(uint32_t),
+                                  NULL );
+
+    return (crc == g_persistent_conf.crc32);
 }
 
 void FlashConfigData_Print(void)
@@ -124,10 +165,22 @@ void FlashConfigData_Print(void)
 
 ret_code_t FlashConfigData_WriteBack(void)
 {
+    if ( !g_is_initialized )
+    {
+        return NRF_ERROR_INVALID_STATE;
+    }
+
     ret_code_t err_code;
 
     // Increment the swap count
     g_persistent_conf.swap_count++;
+
+    // Erase the swap page before writing to it
+    err_code = nrf_fstorage_erase( &g_app_fstorage,
+                                   g_swap_page_addr,
+                                   1,
+                                   NULL );
+    require_noerr(err_code, exit);
 
     // Write the config data to the swap page
     err_code = nrf_fstorage_write( &g_app_fstorage,
@@ -152,6 +205,11 @@ exit:
 
 ret_code_t FlashConfigData_RestoreFromSwap(void)
 {
+    if ( !g_is_initialized )
+    {
+        return NRF_ERROR_INVALID_STATE;
+    }
+
     ret_code_t err_code;
 
     uint32_t swap_count = g_persistent_conf.swap_count;
@@ -179,6 +237,11 @@ exit:
 
 ret_code_t FlashConfigData_Deinit(void)
 {
+    if ( !g_is_initialized )
+    {
+        return NRF_ERROR_INVALID_STATE;
+    }
+
     ret_code_t err_code;
 
     // Writeback the current config before de-initializing

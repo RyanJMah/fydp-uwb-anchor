@@ -51,6 +51,7 @@ SRC_FILES += \
 	$(SDK_ROOT)/components/libraries/experimental_section_vars/nrf_section_iter.c \
 	$(SDK_ROOT)/components/libraries/sortlist/nrf_sortlist.c \
 	$(SDK_ROOT)/components/libraries/strerror/nrf_strerror.c \
+	$(SDK_ROOT)/components/libraries/crc32/crc32.c \
 	$(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_clock.c \
 	$(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_uart.c \
 	$(SDK_ROOT)/components/drivers_nrf/nrf_soc_nosd/nrf_nvic.c \
@@ -95,6 +96,7 @@ INC_FOLDERS += \
 	$(SDK_ROOT)/components/libraries/log \
 	$(SDK_ROOT)/components/libraries/fstorage \
 	$(SDK_ROOT)/components/libraries/experimental_section_vars \
+	$(SDK_ROOT)/components/libraries/crc32 \
 	$(SDK_ROOT)/integration/nrfx/legacy \
 	$(SDK_ROOT)/components/libraries/mutex \
 	$(SDK_ROOT)/external/fnmatch \

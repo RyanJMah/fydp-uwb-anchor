@@ -61,6 +61,8 @@ class FlashConfig(LittleEndianStructure):
         ("server_hostname",         Hostname  * NUM_FALLBACK_SERVERS),
         ("server_ip_addr",          Ipv4_Addr * NUM_FALLBACK_SERVERS),
         ("server_port",             c_uint32  * NUM_FALLBACK_SERVERS),
+
+        ("crc32",                   c_uint32)
     ]
 
 # in case we want this in the future
@@ -158,7 +160,14 @@ def main():
                                 static_gateway_,
                                 server_hostname_,
                                 server_ip_addr_,
-                                server_port_ )
+                                server_port_,
+                                0 )
+
+    # Bytes of the struct, minus the uint32_t crc32 field
+    flash_config_bytes = bytes(flash_config)[:-4]
+
+    # Calculate the CRC32 of the struct
+    flash_config.crc32 = crc32(flash_config_bytes)
 
     filename_no_ext = os.path.join(BIN_DIR, f"a{anchor_id}")
 

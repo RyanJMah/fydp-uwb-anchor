@@ -1,5 +1,6 @@
+-I./Common/inc
+-I./Src/LANTask
 -I./Src/MQTT
--I./Src/LAN
 -I./coreMQTT/source/include
 -I./coreMQTT/source/interface
 -I./Wiznet

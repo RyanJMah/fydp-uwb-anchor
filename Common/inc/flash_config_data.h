@@ -54,6 +54,8 @@ typedef struct __attribute__((packed))
     ipv4_addr_t server_ip_addr[10];
     uint32_t    server_port[10];
 
+    // CRC32 of this struct, not including this field
+    uint32_t crc32;
 } FlashConfigData_t;
 
 
@@ -66,11 +68,13 @@ extern FlashConfigData_t g_persistent_conf;
  * PUBLIC FUNCTIONS
  ************************************************************/
 ret_code_t FlashConfigData_Init(void);
+uint8_t FlashConfigData_IsInitalized(void);
 
 // Only ever used by bootloader right before jumping to app code
 ret_code_t FlashConfigData_Deinit(void);
 
-uint8_t FlashConfigData_IsInitalized(void);
+// Returns 1 if the data is valid, 0 otherwise
+uint8_t FlashConfigData_Validate(void);
 
 void FlashConfigData_Print(void);
 
