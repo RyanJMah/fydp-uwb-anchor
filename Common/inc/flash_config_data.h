@@ -60,7 +60,7 @@ typedef struct __attribute__((packed))
 /*************************************************************
  * GLOBAL VARIABLES
  ************************************************************/
-extern FlashConfigData_t g_config;
+extern FlashConfigData_t g_persistent_conf;
 
 /*************************************************************
  * PUBLIC FUNCTIONS

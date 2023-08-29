@@ -129,9 +129,9 @@ static ALWAYS_INLINE void _network_init(void)
 {
     memset( &g_net_info, 0, sizeof(g_net_info) );
 
-    memcpy( g_net_info.mac, g_config.mac_addr, sizeof(g_net_info.mac) );
+    memcpy( g_net_info.mac, g_persistent_conf.mac_addr, sizeof(g_net_info.mac) );
 
-    if ( g_config.using_dhcp )
+    if ( g_persistent_conf.using_dhcp )
     {
         g_net_info.dhcp = NETINFO_DHCP;
     }
@@ -139,9 +139,17 @@ static ALWAYS_INLINE void _network_init(void)
     {
         g_net_info.dhcp = NETINFO_STATIC;
 
-        memcpy( g_net_info.ip, g_config.static_ip_addr.bytes, sizeof(g_net_info.ip) );
-        memcpy( g_net_info.gw, g_config.static_gateway.bytes, sizeof(g_net_info.gw) );
-        memcpy( g_net_info.sn, g_config.static_netmask.bytes, sizeof(g_net_info.sn) );
+        memcpy( g_net_info.ip,
+                g_persistent_conf.static_ip_addr.bytes,
+                sizeof(g_net_info.ip) );
+
+        memcpy( g_net_info.gw,
+                g_persistent_conf.static_gateway.bytes,
+                sizeof(g_net_info.gw) );
+
+        memcpy( g_net_info.sn,
+                g_persistent_conf.static_netmask.bytes,
+                sizeof(g_net_info.sn) );
     }
 
     ctlnetwork(CN_SET_NETINFO, (void*)&g_net_info);
@@ -208,7 +216,7 @@ void LAN_Init(nrfx_gpiote_evt_handler_t isr_func)
 
     _network_init();
 
-    if ( g_config.using_dhcp )
+    if ( g_persistent_conf.using_dhcp )
     {
         _get_ip_via_dhcp();
     }
