@@ -32,7 +32,7 @@ class Ipv4_Addr(LittleEndianStructure):
 class Hostname(LittleEndianStructure):
     _pack_ = 1
     _fields_ = [
-        ("c", c_char * 128)
+        ("c", c_char * MAX_HOSTNAME_CHARS)
     ]
 
     @classmethod
@@ -88,7 +88,7 @@ def main():
     #########################################################################
     swap_count = 0
 
-    fw_update_pending = 0
+    fw_update_pending = 1
 
     anchor_id = int(sys.argv[-1])
 
@@ -173,6 +173,8 @@ def main():
 
     # Calculate the CRC32 of the struct
     flash_config.crc32 = crc32(flash_config_bytes)
+
+    print(f"Generated CRC32: {flash_config.crc32}")
 
     # Bytes to write to flash
     provisioning_bytes = bytes(flash_config)

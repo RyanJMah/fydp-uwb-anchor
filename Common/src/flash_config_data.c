@@ -97,29 +97,29 @@ ret_code_t FlashConfigData_Init(void)
     // Mark as initialized
     g_is_initialized = 1;
 
-//     // Now that we've read the config data, validate it
-//     if ( !FlashConfigData_Validate() )
-//     {
-//         GL_LOG("ERROR: crc32 of config data is bad, restoring from swap...\n");
+    // Now that we've read the config data, validate it
+    if ( !FlashConfigData_Validate() )
+    {
+        GL_LOG("ERROR: crc32 of config data is bad, restoring from swap...\n");
 
-//         err_code = FlashConfigData_RestoreFromSwap();
-//         require_noerr(err_code, exit);
+        err_code = FlashConfigData_RestoreFromSwap();
+        require_noerr(err_code, exit);
 
-//         // Validate again
-//         if ( !FlashConfigData_Validate() )
-//         {
-//             // If the restore from swap didn't work, there's nothing we can do...
-//             GL_LOG("ERROR: crc32 is still bad, please re-provision the device...\n");
+        // Validate again
+        if ( !FlashConfigData_Validate() )
+        {
+            // If the restore from swap didn't work, there's nothing we can do...
+            GL_LOG("ERROR: crc32 is still bad, please re-provision the device...\n");
 
-//             NRF_LOG_FINAL_FLUSH();
-//             while (1)
-//             {
-//                 // Do nothing...
-//             }
-//         }
-//     }
+            NRF_LOG_FINAL_FLUSH();
+            while (1)
+            {
+                // Do nothing...
+            }
+        }
+    }
 
-    GL_LOG("Persistent config data good...\n");
+    GL_LOG("Config data CRC good...\n");
     FlashConfigData_Print();
     GL_LOG("\n");
 
