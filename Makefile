@@ -34,14 +34,10 @@ TARGET_ELF     := $(TARGET_BIN_DIR)/DWM3001CDK-QANI-FreeRTOS.elf
 
 SOFTDEVICE_HEX = ./SDK_BSP/Nordic/NORDIC_SDK_17_1_0/components/softdevice/s113/hex/s113_nrf52_7.2.0_softdevice.hex
 
-PROVISIONING_BIN_DIR := ./Provisioning_Images
+CONFIG_BIN_DIR := ./Config_Images
 
 define get_constants_from_headers
 	@./Scripts/get_constants_from_headers.sh > /dev/null
-endef
-
-define generate_provisioning_image
-	@python3 Scripts/generate_flash_config_bin.py $(1)
 endef
 
 # fuck windows
@@ -49,6 +45,7 @@ ifeq ($(HOST_OS),Windows)
 	DWM3001CDK_BUILD_DIR := .\\Projects\\QANI\\FreeRTOS\\DWM3001CDK\\ses\\Output
 endif
 
+################################################################################################
 .PHONY: all
 all:
 	@$(EM_BUILD) -echo -config "Common" $(DWM3001CDK_PROJ_XML) 2>&1
@@ -59,6 +56,13 @@ all:
 clean:
 	$(RMDIR) $(DWM3001CDK_BUILD_DIR)
 
+.PHONY: flash
+flash: all
+	$(NRFJPROG) --program $(TARGET_HEX) --sectorerase --verify
+	$(NRFJPROG) --reset
+################################################################################################
+
+################################################################################################
 .PHONY: bl
 bl:
 	cd ./Bootloader && make
@@ -71,32 +75,68 @@ clean_bl:
 .PHONY: flash_bl
 flash_bl:
 	cd ./Bootloader && make flash
+################################################################################################
 
-.PHONY: provision
-provision:
-	$(call check_defined, ANCHOR_ID, anchor id must be provided)
-	$(call generate_provisioning_image, $(ANCHOR_ID))
-	$(NRFJPROG) --program $(PROVISIONING_BIN_DIR)/a$(ANCHOR_ID).hex --sectorerase --verify
+################################################################################################
+$(CONFIG_BIN_DIR):
+	mkdir $(CONFIG_BIN_DIR)
+
+.PHONY: config_imgs
+config_imgs: $(CONFIG_BIN_DIR)
+	python3 Scripts/generate_config_imgs.py
+
+.PHONY: clean_config_imgs
+clean_config_imgs:
+	$(RMDIR) $(CONFIG_BIN_DIR)
+
+.PHONY: flash_config_img
+flash_config_img: config_imgs
+	$(call check_defined, ANCHOR_ID, which anchod id to flash?)
+	$(NRFJPROG) --program $(CONFIG_BIN_DIR)/a$(ANCHOR_ID).hex --sectorerase --verify
 	$(NRFJPROG) --reset
+################################################################################################
 
-.PHONY: clean_provisioning
-clean_provisioning:
-	$(RMDIR) $(PROVISIONING_BIN_DIR)
+################################################################################################
+.PHONY: everything
+everything: all bl config_imgs
 
+.PHONY: clean_everything
+clean_everything: clean clean_bl clean_config_imgs
+
+.PHONY: flash_everything
+flash_everything: flash_erase flash flash_bl flash_config_img
+################################################################################################
+
+################################################################################################
 .PHONY: flash_erase
 flash_erase:
 	$(NRFJPROG) --eraseall
-
-.PHONY: flash
-flash: all
-	$(NRFJPROG) --program $(TARGET_HEX) --sectorerase --verify
-	$(NRFJPROG) --reset
 
 .PHONY: flash_sd
 flash_sd:
 	$(NRFJPROG) --program $(SOFTDEVICE_HEX) --verify
 	$(NRFJPROG) --reset
+################################################################################################
 
-.PHONY: clean_all
-clean_all: clean clean_bl clean_provisioning
-
+################################################################################################
+.PHONY: help
+help:
+	@echo "make:    				Build the application"
+	@echo "make clean:          	Clean the application"
+	@echo "make flash: 				Flash the application"
+	@echo ""
+	@echo "make bl:             	Build the bootloader"
+	@echo "make clean_bl:       	Clean the bootloader"
+	@echo "make flash_bl:       	Flash the bootloader"
+	@echo ""
+	@echo "make config_imgs:    	Generate config images"
+	@echo "make clean_config_imgs: 	Clean config images"
+	@echo "make flash_config_img: 	Flash config image"
+	@echo ""
+	@echo "make everything:     	Build everything"
+	@echo "make clean_everything: 	Clean everything"
+	@echo "make flash_everything: 	Flash everything"
+	@echo ""
+	@echo "make flash_erase:    	Erase all flash"
+	@echo "make flash_sd:       	Flash softdevice"
+################################################################################################

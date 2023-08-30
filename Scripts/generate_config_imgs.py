@@ -13,7 +13,7 @@ from header_constants import (
 
 THIS_DIR      = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT_DIR = os.path.dirname(THIS_DIR)
-BIN_DIR       = os.path.join(REPO_ROOT_DIR, "Provisioning_Images")
+BIN_DIR       = os.path.join(REPO_ROOT_DIR, "Config_Images")
 
 # Refer to ./Common/lan.h
 class Ipv4_Addr(LittleEndianStructure):
@@ -83,13 +83,11 @@ def crc32(data: bytes) -> int:
 
     return crc ^ 0xFFFFFFFF
 
-def main():
+def generate_anchor_config(anchor_id: int):
     #########################################################################
     swap_count = 0
 
     fw_update_pending = 0
-
-    anchor_id = int(sys.argv[-1])
 
     socket_recv_timeout_ms = 5000
 
@@ -146,10 +144,10 @@ def main():
     static_gateway_ = Ipv4_Addr.from_list(static_gateway)
 
     server_hostname_ = [ Hostname.from_bytes(b) for b in server_hostname ]
-    server_hostname_ = (Hostname * NUM_FALLBACK_SERVERS)(*server_hostname_)
+    server_hostname_ = (Hostname * NUM_FALLBACK_SERVERS)(*server_hostname_)     # type: ignore
 
     server_ip_addr_ = [ Ipv4_Addr.from_list(a) for a in server_ip_addr ]
-    server_ip_addr_ = (Ipv4_Addr * NUM_FALLBACK_SERVERS)(*server_ip_addr_)
+    server_ip_addr_ = (Ipv4_Addr * NUM_FALLBACK_SERVERS)(*server_ip_addr_)      # type: ignore
 
     server_port_    = (c_uint32 * NUM_FALLBACK_SERVERS)(*server_port)
 
@@ -192,7 +190,11 @@ def main():
 
     bin2hex(bin_filename, hex_filename, FLASH_CONFIG_DATA_START_ADDR)
 
-    print(f"Generated provisioning images {bin_filename} and {hex_filename}")
+    print(f"Generated config images {hex_filename}")
+
+def main():
+    for i in range(5):
+        generate_anchor_config(i)
 
 if __name__ == '__main__':
     main()
