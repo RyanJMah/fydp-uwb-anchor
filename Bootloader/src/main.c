@@ -12,8 +12,6 @@ static void w5500_isr( nrf_drv_gpiote_pin_t pin,
     // Empty for now...
 }
 
-static ipv4_addr_t server_addr = {.bytes = {192, 168, 8, 2}};
-
 static uint8_t msg[] = "Hello World!";
 
 int main(void)
@@ -25,29 +23,37 @@ int main(void)
     GL_LOG("Reading config data from flash...\n");
     FlashConfigData_Init();
 
-    // gp_persistent_conf->fw_update_pending ^= 1;
-    // FlashConfigData_WriteBack();
+    if ( !gp_persistent_conf->fw_update_pending )
+    {
+        // Jump straight to application code
+        // DFU_JumpToApp();
+    }
+
+    // If we're here, the fw_update_pending flag is set, start DFU
 
     LAN_Init( w5500_isr );
 
-    GL_LOG("Connecting to test server...\n");
-    int err_code = LAN_Connect(MQTT_SOCK_NUM, server_addr, 6900);
+    GL_LOG("Connecting to dfu server...\n");
 
-    if ( err_code <= 0 )
-    {
-        GL_LOG("Failed to connect to server, err_code = %d\n", err_code);
-        while (1)
-        {
-            // Do nothing...
-        }
-    }
+    ret_code_t err_code;
+    int        sock_err_code;
+
+    sock_err_code = LAN_Connect(DFU_SOCK_NUM, gp_persistent_conf->server_ip_addr[0], 6900);
+    require( sock_err_code > 0, err_handler);
 
     while (1)
     {
         GL_LOG("sending msg...\n");
-        LAN_Send(MQTT_SOCK_NUM, msg, 12);
+        LAN_Send(DFU_SOCK_NUM, msg, 12);
 
         nrf_delay_ms(500);
+    }
+
+err_handler:
+    GL_LOG("DFU FATAL ERROR: err_code=%d, sock_err_code=%d\n", err_code, sock_err_code);
+    while (1)
+    {
+        // Do nothing...
     }
 
     return 0;

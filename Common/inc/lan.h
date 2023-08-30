@@ -13,6 +13,7 @@
 #define MQTT_SOCK_NUM       ( 1 )
 #define MDNS_SOCK_NUM       ( 2 )
 #define DHCP_SOCK_NUM       ( 3 )
+#define DFU_SOCK_NUM        ( 4 )
 
 #define MAX_HOSTNAME_CHARS  ( 256 )
 
