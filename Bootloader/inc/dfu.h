@@ -26,16 +26,17 @@ typedef struct __attribute__((packed))
     uint32_t chunk_num;
     uint8_t  payload[FLASH_PAGE_SIZE];
     uint32_t crc32;
-} DFU_PayloadChunk_t;
+} DFU_Chunk_t;
 
 /*************************************************************
  * PUBLIC FUNCTIONS
  ************************************************************/
 ret_code_t DFU_Init(void);
+ret_code_t DFU_Deinit(void);
 
 ret_code_t DFU_EraseAppCode(void);
 
-ret_code_t DFU_WriteChunk(DFU_PayloadChunk_t* chunk);
+ret_code_t DFU_WriteChunk(DFU_Chunk_t* chunk);
 
 void DFU_RegisterMetadata(DFU_Metadata_t* metadata);
 

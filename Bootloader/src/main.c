@@ -2,6 +2,7 @@
 
 #include "gl_log.h"
 #include "lan.h"
+#include "dfu.h"
 #include "flash_config_data.h"
 
 static void w5500_isr( nrf_drv_gpiote_pin_t pin,
@@ -24,7 +25,7 @@ int main(void)
     if ( !gp_persistent_conf->fw_update_pending )
     {
         // Jump straight to application code
-        // DFU_JumpToApp();
+        DFU_JumpToApp();
     }
 
     // If we're here, the fw_update_pending flag is set, start DFU
