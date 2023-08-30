@@ -31,7 +31,7 @@ typedef struct __attribute__((packed))
      *
      * It's a int32_t, so the flash will likely physically fail before we overflow it.
      */
-    int32_t swap_count;
+    uint32_t swap_count;
 
     uint8_t fw_update_pending;  // signal to bootloader that we want to update the firmware
 
@@ -62,7 +62,7 @@ typedef struct __attribute__((packed))
 /*************************************************************
  * GLOBAL VARIABLES
  ************************************************************/
-extern FlashConfigData_t g_persistent_conf;
+extern FlashConfigData_t* gp_persistent_conf;
 
 /*************************************************************
  * PUBLIC FUNCTIONS

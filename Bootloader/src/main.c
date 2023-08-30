@@ -12,7 +12,7 @@ static void w5500_isr( nrf_drv_gpiote_pin_t pin,
     // Empty for now...
 }
 
-static ipv4_addr_t server_addr = {.bytes = MQTT_BROKER_ADDR};
+static ipv4_addr_t server_addr = {.bytes = {192, 168, 8, 2}};
 
 static uint8_t msg[] = "Hello World!";
 
@@ -25,12 +25,13 @@ int main(void)
     GL_LOG("Reading config data from flash...\n");
     FlashConfigData_Init();
 
-    GL_LOG("Initializing lan...\n");
+    // gp_persistent_conf->fw_update_pending ^= 1;
+    // FlashConfigData_WriteBack();
+
     LAN_Init( w5500_isr );
 
     GL_LOG("Connecting to test server...\n");
-
-    int err_code = LAN_Connect(DHCP_SOCK_NUM, server_addr, 6900);
+    int err_code = LAN_Connect(MQTT_SOCK_NUM, server_addr, 6900);
 
     if ( err_code <= 0 )
     {
@@ -44,7 +45,7 @@ int main(void)
     while (1)
     {
         GL_LOG("sending msg...\n");
-        LAN_Send(DHCP_SOCK_NUM, msg, 12);
+        LAN_Send(MQTT_SOCK_NUM, msg, 12);
 
         nrf_delay_ms(500);
     }

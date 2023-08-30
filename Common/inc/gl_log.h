@@ -7,13 +7,9 @@
 #include "nrf_log_default_backends.h"
 #include "macros.h"
 
-#define GL_LOG(fmt, ...)                        \
-    do                                          \
-    {                                           \
-        NRF_LOG_RAW_INFO(fmt, ##__VA_ARGS__);   \
-        NRF_LOG_FLUSH();                        \
-    }                                           \
-    while (0)
+void diag_printf(char *s, ...);
+
+#define GL_LOG(fmt, ...)    diag_printf(fmt, ##__VA_ARGS__)
 
 ALWAYS_INLINE void GL_LOG_INIT(void)
 {

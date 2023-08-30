@@ -1,6 +1,6 @@
 import os
 import sys
-from ctypes import LittleEndianStructure, c_uint32, c_uint8, c_int32, c_char
+from ctypes import LittleEndianStructure, c_uint32, c_uint8, c_char
 from intelhex import bin2hex
 
 THIS_DIR      = os.path.dirname(os.path.abspath(__file__))
@@ -48,7 +48,7 @@ class Hostname(LittleEndianStructure):
 class FlashConfig(LittleEndianStructure):
     _pack_ = 1
     _fields_ = [
-        ("swap_count",              c_int32),
+        ("swap_count",              c_uint32),
 
         ("fw_update_pending",       c_uint8),
 
@@ -173,8 +173,6 @@ def main():
 
     # Calculate the CRC32 of the struct
     flash_config.crc32 = crc32(flash_config_bytes)
-
-    print(f"Generated CRC32: {flash_config.crc32}")
 
     # Bytes to write to flash
     provisioning_bytes = bytes(flash_config)
