@@ -1,4 +1,6 @@
 #include "nrf_delay.h"
+#include "nrf_sdm.h"
+#include "nrf_bootloader_info.h"
 
 #include "gl_log.h"
 #include "lan.h"
@@ -18,6 +20,8 @@ int main(void)
     GL_LOG_INIT();
 
     GL_LOG("ENTERING BOOTLOADER!\n");
+
+    nrf_bootloader_mbr_addrs_populate();
 
     GL_LOG("Reading config data from flash...\n");
     FlashConfigData_Init();

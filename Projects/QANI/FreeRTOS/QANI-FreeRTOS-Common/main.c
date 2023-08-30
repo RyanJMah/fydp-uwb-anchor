@@ -128,22 +128,12 @@ static void clock_init(void) {
 /**@brief Function for application main entry.
  */
 int main(void) {
-    // Relocate the vector table to point to app vector table, not bootloader's
-    SCB->VTOR = (uint32_t)FLASH_APP_START_ADDR;
-
     // Initialize modules.
     clock_init();
     reporter_instance.init();
 
     hal_uwb.mcu_sleep_config();
 
-    // BoardInit();
-    // while (1)
-    // {
-    //     GL_LOG("FUCK FUCK PLEASE!!!!\n");
-    //     bsp_board_led_invert(BSP_BOARD_LED_0);
-    //     nrf_delay_ms(250);
-    // }
 
 #if NRF_LOG_ENABLED
     init_logger_thread();

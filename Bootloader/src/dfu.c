@@ -1,7 +1,8 @@
 #include "nrf_fstorage.h"
 #include "nrf_fstorage_nvmc.h"
-#include "nrf_dfu_mbr.h"
-#include "nrf_mbr.h"
+#include "nrf_bootloader_app_start.h"
+#include "nrf_sdm.h"
+#include "nrf_log_ctrl.h"
 #include "crc32.h"
 #include "nrf.h"
 
@@ -19,22 +20,6 @@ static NRF_FSTORAGE_DEF(nrf_fstorage_t g_app_code_fstorage) =
 };
 
 static uint8_t g_is_initialized = 0;
-
-/*************************************************************
- * PUBLIC FUNCTIONS
- ************************************************************/
-
-/**@brief Function that sets the stack pointer and starts executing a particular address.
- *
- * @param[in]  new_msp  The new value to set in the main stack pointer.
- * @param[in]  addr     The address to execute.
- */
-static void jump_to_addr(uint32_t new_msp, uint32_t addr)
-{
-    __set_MSP(new_msp);
-    ((void (*)(void))addr)();
-}
-
 
 /*************************************************************
  * PUBLIC FUNCTIONS
@@ -91,38 +76,17 @@ ret_code_t DFU_EraseAppCode(void)
 
 void DFU_JumpToApp(void)
 {
-    const uint32_t vector_table_addr = FLASH_APP_START_ADDR;
+    // if ( sd_softdevice_vector_table_base_set(FLASH_APP_START_ADDR) != NRF_SUCCESS )
+    // {
+    //     GL_LOG("Failed to set vector table base address.\r\n");
 
-    const uint32_t current_isr_num = (__get_IPSR() & IPSR_ISR_Msk);
-    const uint32_t new_msp         = *((uint32_t *)(vector_table_addr));                    // The app's Stack Pointer is found as the first word of the vector table.
-    const uint32_t reset_handler   = *((uint32_t *)(vector_table_addr + sizeof(uint32_t))); // The app's Reset Handler is found as the second word of the vector table.
+    //     NRF_LOG_FINAL_FLUSH();
 
-    // Disable and clear interrupts
-    // Notice that this disables only 'external' interrupts (positive IRQn).
-    GL_LOG("Disabling interrupts. NVIC->ICER[0]: 0x%x", NVIC->ICER[0]);
+    //     while (1)
+    //     {
 
-    NVIC->ICER[0]=0xFFFFFFFF;
-    NVIC->ICPR[0]=0xFFFFFFFF;
-#if defined(__NRF_NVIC_ISER_COUNT) && __NRF_NVIC_ISER_COUNT == 2
-    NVIC->ICER[1]=0xFFFFFFFF;
-    NVIC->ICPR[1]=0xFFFFFFFF;
-#endif
+    //     }
+    // }
 
-    if ( nrf_dfu_mbr_irq_forward_address_set() != NRF_SUCCESS)
-    {
-        NRF_LOG_ERROR("Failed running nrf_dfu_mbr_irq_forward_address_set()");
-    }
-
-    __set_CONTROL(0x00000000);   // Set CONTROL to its reset value 0.
-    __set_PRIMASK(0x00000000);   // Set PRIMASK to its reset value 0.
-    __set_BASEPRI(0x00000000);   // Set BASEPRI to its reset value 0.
-    __set_FAULTMASK(0x00000000); // Set FAULTMASK to its reset value 0.
-
-    ASSERT(current_isr_num == 0); // If this is triggered, the CPU is currently in an interrupt.
-
-    // Relocate the vector table
-    // SCB->VTOR = vector_table_addr;
-
-    // The CPU is in Thread mode (main context).
-    jump_to_addr(new_msp, reset_handler); // Jump directly to the App's Reset Handler.
+    nrf_bootloader_app_start();
 }

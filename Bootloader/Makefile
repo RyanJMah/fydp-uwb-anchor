@@ -52,6 +52,9 @@ SRC_FILES += \
 	$(SDK_ROOT)/components/libraries/strerror/nrf_strerror.c \
 	$(SDK_ROOT)/components/libraries/crc32/crc32.c \
 	$(SDK_ROOT)/components/libraries/bootloader/dfu/nrf_dfu_mbr.c \
+	$(SDK_ROOT)/components/libraries/bootloader/nrf_bootloader_info.c \
+	$(SDK_ROOT)/components/libraries/bootloader/nrf_bootloader_app_start.c \
+	$(SDK_ROOT)/components/libraries/bootloader/nrf_bootloader_app_start_final.c \
 	$(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_clock.c \
 	$(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_uart.c \
 	$(SDK_ROOT)/components/drivers_nrf/nrf_soc_nosd/nrf_nvic.c \
@@ -96,6 +99,7 @@ INC_FOLDERS += \
 	$(SDK_ROOT)/components/libraries/crc32 \
 	$(SDK_ROOT)/components/libraries/bootloader/dfu \
 	$(SDK_ROOT)/components/softdevice/mbr/headers \
+	$(SDK_ROOT)/components/softdevice/s113/headers \
 	$(SDK_ROOT)/components/libraries/bootloader \
 	$(SDK_ROOT)/integration/nrfx/legacy \
 	$(SDK_ROOT)/components/libraries/mutex \
@@ -197,7 +201,11 @@ include $(TEMPLATE_PATH)/Makefile.common
 
 $(foreach target, $(TARGET), $(call define_target, $(target)))
 
-.PHONY: flash erase
+.PHONY: flash erase disassemble
+
+disassemble: $(OUTPUT_DIRECTORY)/$(TARGET).out
+	@echo Disassembling: $<
+	$(OBJDUMP) -D $< > $(OUTPUT_DIRECTORY)/$(TARGET).asm -S --architecture=cortex-m4
 
 # Flash the program
 flash: default

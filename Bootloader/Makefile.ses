@@ -1,0 +1,29 @@
+EM_BUILD := /Applications/SEGGER\ Embedded\ Studio\ for\ ARM\ 5.68/bin/emBuild
+SIZE     := /Applications/SEGGER\ Embedded\ Studio\ for\ ARM\ 5.68/gcc/arm-none-eabi/bin/arm-none-eabi-size
+RMDIR    := rm -rf
+
+OUTPUT_DIR := ./Output
+
+BIN_DIR := $(OUTPUT_DIR)/Common/Exe
+
+TARGET := $(BIN_DIR)/gl_bootloader
+
+.PHONY: all
+all:
+	@$(EM_BUILD) -echo -config "Common" ./gl_bootloader.emProject 2>&1
+	@$(SIZE) $(TARGET).elf
+
+.PHONY: clean
+clean:
+	$(RMDIR) $(OUTPUT_DIR)
+
+.PHONY: flash
+flash: all
+	@echo Flashing: $(TARGET).hex
+	nrfjprog -f nrf52 --program $(TARGET).hex --sectorerase --verify
+	nrfjprog -f nrf52 --reset
+
+.PHONY: flash_erase
+flash_erase:
+	nrfjprog -f nrf52 --eraseall
+	nrfjprog -f nrf52 --reset
