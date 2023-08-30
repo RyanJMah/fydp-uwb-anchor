@@ -163,6 +163,8 @@ int main(void) {
     // Start BLE 
     char advertising_name[32];
 
+    nrf_delay_ms(2000);
+
     // snprintf(advertising_name, sizeof(advertising_name), "%s (%08X)", (char*)BoardName, (unsigned int)NRF_FICR->DEVICEADDR[0]);
     snprintf(advertising_name, sizeof(advertising_name), "%s", (char*)BoardName);
     ble_init(advertising_name);

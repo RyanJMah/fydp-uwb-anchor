@@ -299,10 +299,6 @@ ret_code_t FlashConfigData_Deinit(void)
 
     ret_code_t err_code;
 
-    // Writeback the current config before de-initializing
-    err_code = FlashConfigData_WriteBack();
-    require_noerr(err_code, exit);
-
     // De-initialize the flash storage module
     err_code = nrf_fstorage_uninit(&g_app_fstorage, NULL);
     require_noerr(err_code, exit);

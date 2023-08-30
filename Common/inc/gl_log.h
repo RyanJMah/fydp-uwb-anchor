@@ -1,5 +1,16 @@
 #pragma once
 
+/*
+ * The bootloader uses UART for logs, the app code uses RTT.
+ *
+ * For some reason, SEGGER doesn't provide any de-initialization
+ * functions for RTT, so we are forced to use different logging
+ * mechanisms for the bootloader and the app.
+ *
+ * I am so glad I paid so much money for SEGGERs shitty little
+ * black box (which is literally, a black box lol)
+ */
+
 #ifdef GL_BOOTLOADER
 
 #include "nrf_log.h"
