@@ -10,6 +10,11 @@
 #include "dfu.h"
 
 /*************************************************************
+ * MACROS
+ ************************************************************/
+#define APP_NUM_PAGES       ( FLASH_APP_SIZE / FLASH_PAGE_SIZE )
+
+/*************************************************************
  * GLOBAL VARIABLES
  ************************************************************/
 static NRF_FSTORAGE_DEF(nrf_fstorage_t g_app_code_fstorage) =
@@ -61,32 +66,23 @@ exit:
 
 ret_code_t DFU_EraseAppCode(void)
 {
-    // if ( !g_is_initialized )
-    // {
-    //     return NRF_ERROR_INVALID_STATE;
-    // }
+    if ( !g_is_initialized )
+    {
+        return NRF_ERROR_INVALID_STATE;
+    }
 
-    // ret_code_t err_code;
+    ret_code_t err_code;
 
     // // Erase all the app code pages
-    // err_code = nrf_fstorage_erase(&g_app_code_fstorage, FLASH_APP_START_ADDR, FLASH_APP_NUM_PAGES, NULL);
-    return NRF_SUCCESS;
+    err_code = nrf_fstorage_erase(&g_app_code_fstorage, FLASH_APP_START_ADDR, APP_NUM_PAGES, NULL);
+    require_noerr(err_code, exit);
+
+exit:
+    return err_code;
 }
 
 
 void DFU_JumpToApp(void)
 {
-    // if ( sd_softdevice_vector_table_base_set(FLASH_APP_START_ADDR) != NRF_SUCCESS )
-    // {
-    //     GL_LOG("Failed to set vector table base address.\r\n");
-
-    //     NRF_LOG_FINAL_FLUSH();
-
-    //     while (1)
-    //     {
-
-    //     }
-    // }
-
     nrf_bootloader_app_start();
 }

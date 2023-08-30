@@ -3,18 +3,17 @@ import sys
 from ctypes import LittleEndianStructure, c_uint32, c_uint8, c_char
 from intelhex import bin2hex
 
+from header_constants import (
+    FLASH_PAGE_SIZE,
+    FLASH_CONFIG_DATA_START_ADDR,
+    FLASH_CONFIG_DATA_END_ADDR,
+    NUM_FALLBACK_SERVERS,
+    MAX_HOSTNAME_CHARS
+)
+
 THIS_DIR      = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT_DIR = os.path.dirname(THIS_DIR)
 BIN_DIR       = os.path.join(REPO_ROOT_DIR, "Provisioning_Images")
-
-FLASH_PAGE_SIZE = 4096
-
-# Refer to ./Common/flash_memory_map.h
-FLASH_CONFIG_START_ADDR = 0x00074000
-FLASH_CONFIG_END_ADDR   = FLASH_CONFIG_START_ADDR + 2*FLASH_PAGE_SIZE
-
-NUM_FALLBACK_SERVERS    = 10
-MAX_HOSTNAME_CHARS      = 256
 
 # Refer to ./Common/lan.h
 class Ipv4_Addr(LittleEndianStructure):
@@ -178,7 +177,9 @@ def main():
     provisioning_bytes = bytes(flash_config)
 
     # pad with FFs so it spans 2 pages
-    provisioning_bytes += bytes( [0xFF] * (FLASH_CONFIG_END_ADDR - FLASH_CONFIG_START_ADDR - len(provisioning_bytes)) )
+    provisioning_bytes += bytes( [0xFF] * (FLASH_CONFIG_DATA_END_ADDR - FLASH_CONFIG_DATA_START_ADDR - len(provisioning_bytes)) )
+
+    os.makedirs(BIN_DIR, exist_ok=True)
 
     # Write to files
     filename_no_ext = os.path.join(BIN_DIR, f"a{anchor_id}")
@@ -189,7 +190,7 @@ def main():
     with open(bin_filename, "wb") as f_bin:
         f_bin.write( provisioning_bytes )
 
-    bin2hex(bin_filename, hex_filename, FLASH_CONFIG_START_ADDR)
+    bin2hex(bin_filename, hex_filename, FLASH_CONFIG_DATA_START_ADDR)
 
     print(f"Generated provisioning images {bin_filename} and {hex_filename}")
 

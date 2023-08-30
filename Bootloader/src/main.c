@@ -45,7 +45,7 @@ int main(void)
     int        sock_err_code;
 
     // Find a server to connect to
-    for (uint8_t i = 0; i < NUM_FALLACK_SERVERS; i++)
+    for (uint8_t i = 0; i < NUM_FALLBACK_SERVERS; i++)
     {
         if ( Port_IsInvalid(gp_persistent_conf->server_port[i]) ||
              IPAddr_IsInvalid(gp_persistent_conf->server_ip_addr[i]) )

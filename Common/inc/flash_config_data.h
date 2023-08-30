@@ -8,7 +8,7 @@
 /*************************************************************
  * MACROS
  ************************************************************/
-#define NUM_FALLACK_SERVERS     ( 10 )
+#define NUM_FALLBACK_SERVERS    ( 10 )
 
 /*************************************************************
  * TYPE DEFINITIONS
@@ -50,9 +50,9 @@ typedef struct __attribute__((packed))
      * Hostname, IP address, and port of server, will try the 0th
      * one first, then the 1st, etc.
      */
-    hostname_t  server_hostname[NUM_FALLACK_SERVERS];
-    ipv4_addr_t server_ip_addr[NUM_FALLACK_SERVERS];
-    uint32_t    server_port[NUM_FALLACK_SERVERS];
+    hostname_t  server_hostname[NUM_FALLBACK_SERVERS];
+    ipv4_addr_t server_ip_addr[NUM_FALLBACK_SERVERS];
+    uint32_t    server_port[NUM_FALLBACK_SERVERS];
 
     // CRC32 of this struct, not including this field
     uint32_t crc32;

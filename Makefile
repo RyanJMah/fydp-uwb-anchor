@@ -36,6 +36,10 @@ SOFTDEVICE_HEX = ./SDK_BSP/Nordic/NORDIC_SDK_17_1_0/components/softdevice/s113/h
 
 PROVISIONING_BIN_DIR := ./Provisioning_Images
 
+define get_constants_from_headers
+	@./Scripts/get_constants_from_headers.sh > /dev/null
+endef
+
 define generate_provisioning_image
 	@python3 Scripts/generate_flash_config_bin.py $(1)
 endef
@@ -49,10 +53,24 @@ endif
 all:
 	@$(EM_BUILD) -echo -config "Common" $(DWM3001CDK_PROJ_XML) 2>&1
 	@$(SIZE) $(TARGET_ELF)
+	$(call get_constants_from_headers)
 
 .PHONY: clean
 clean:
 	$(RMDIR) $(DWM3001CDK_BUILD_DIR)
+
+.PHONY: bl
+bl:
+	cd ./Bootloader && make
+	$(call get_constants_from_headers)
+
+.PHONY: clean_bl
+clean_bl:
+	cd ./Bootloader && make clean
+
+.PHONY: flash_bl
+flash_bl:
+	cd ./Bootloader && make flash
 
 .PHONY: provision
 provision:
@@ -60,6 +78,10 @@ provision:
 	$(call generate_provisioning_image, $(ANCHOR_ID))
 	$(NRFJPROG) --program $(PROVISIONING_BIN_DIR)/a$(ANCHOR_ID).hex --sectorerase --verify
 	$(NRFJPROG) --reset
+
+.PHONY: clean_provisioning
+clean_provisioning:
+	$(RMDIR) $(PROVISIONING_BIN_DIR)
 
 .PHONY: flash_erase
 flash_erase:
@@ -74,4 +96,7 @@ flash: all
 flash_sd:
 	$(NRFJPROG) --program $(SOFTDEVICE_HEX) --verify
 	$(NRFJPROG) --reset
+
+.PHONY: clean_all
+clean_all: clean clean_bl clean_provisioning
 

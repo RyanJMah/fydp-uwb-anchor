@@ -1,3 +1,6 @@
 [submodule "coreMQTT"]
 	path = coreMQTT
 	url = https://github.com/FreeRTOS/coreMQTT.git
+[submodule "nanopb"]
+	path = nanopb
+	url = https://github.com/nanopb/nanopb.git
