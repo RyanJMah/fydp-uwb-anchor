@@ -137,6 +137,14 @@ int main(void) {
 
     hal_uwb.mcu_sleep_config();
 
+    // BoardInit();
+    // while (1)
+    // {
+    //     GL_LOG("FUCK FUCK PLEASE!!!!\n");
+    //     bsp_board_led_invert(BSP_BOARD_LED_0);
+    //     nrf_delay_ms(250);
+    // }
+
 #if NRF_LOG_ENABLED
     init_logger_thread();
 #endif
@@ -154,14 +162,6 @@ int main(void) {
 
     // Start BLE 
     char advertising_name[32];
-
-    // BoardInit();
-    // while (1)
-    // {
-    //     GL_LOG("FUCK FUCK PLEASE!!!!\n");
-    //     bsp_board_led_invert(BSP_BOARD_LED_0);
-    //     nrf_delay_ms(250);
-    // }
 
     // snprintf(advertising_name, sizeof(advertising_name), "%s (%08X)", (char*)BoardName, (unsigned int)NRF_FICR->DEVICEADDR[0]);
     snprintf(advertising_name, sizeof(advertising_name), "%s", (char*)BoardName);

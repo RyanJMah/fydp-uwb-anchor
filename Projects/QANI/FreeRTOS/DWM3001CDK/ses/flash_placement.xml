@@ -3,8 +3,8 @@
   <MemorySegment name="FLASH" start="$(FLASH_PH_START)" size="$(FLASH_PH_SIZE)">
     <ProgramSection load="no" name=".reserved_flash" start="$(FLASH_PH_START)" size="$(FLASH_START)-$(FLASH_PH_START)" />
     <ProgramSection alignment="0x100" load="Yes" name=".vectors" start="$(FLASH_START)" />
-    <ProgramSection alignment="0x1000"  keep="Yes" load="Yes" name=".fconfig" start="$(FCONFIG_START)" inputsections="*(.fconfig .fconfig.*)" address_symbol="__fconfig_start" size="$(FCONFIG_SIZE)"/>
-    <ProgramSection alignment="4" load="Yes" name=".init" start="$(INIT_START)"/>
+    <ProgramSection alignment="0x1000"  keep="Yes" load="Yes" name=".fconfig" start="$(FLASH_START) + 0x2000" inputsections="*(.fconfig .fconfig.*)" address_symbol="__fconfig_start" size="$(FCONFIG_SIZE)"/>
+    <ProgramSection alignment="4" load="Yes" name=".init" start="$(FLASH_START) + 0x3000"/>
     <ProgramSection alignment="4" load="Yes" name=".init_rodata" />
     <ProgramSection alignment="4" load="Yes" name=".text" />
     <ProgramSection alignment="4" keep="Yes" load="Yes" name=".sdh_soc_observers" inputsections="*(SORT(.sdh_soc_observers*))" address_symbol="__start_sdh_soc_observers" end_symbol="__stop_sdh_soc_observers" />

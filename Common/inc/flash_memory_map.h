@@ -20,18 +20,18 @@
  *  |                              |
  *  --------------------------------
  *  |                              |
- *  |          Bootloader          |    20 kB   (0x0001 c000 - 0x0002 0FFF)
- *  |          (5 pages)           |
+ *  |          Bootloader          |    40 kB   (0x0001 c000 - 0x0002 5FFF)
+ *  |          (10 pages)          |
  *  |                              |
  *  --------------------------------
  *  |                              |
- *  |      Config Data Storage     |    8 kB    (0x0002 1000 - 0x0002 2FFF)
+ *  |      Config Data Storage     |    8 kB    (0x0002 6000 - 0x0002 7FFF)
  *  |         (2 pages)            |
  *  |                              |
  *  --------------------------------
  *  |                              |
- *  |         Application          |    372 kB  (0x0002 3000 - 0x0007 FFFF)
- *  |         (93 pages)           |
+ *  |         Application          |    352 kB  (0x0002 8000 - 0x0007 FFFF)
+ *  |         (88 pages)           |
  *  |                              |
  *  --------------------------------   -------
  *                               Total: 512 kB
