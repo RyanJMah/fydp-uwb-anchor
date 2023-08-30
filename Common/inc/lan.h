@@ -35,7 +35,6 @@ typedef struct
 /*************************************************************
  * PUBLIC FUNCTIONS
  ************************************************************/
-
 void LAN_Init(nrfx_gpiote_evt_handler_t isr_func);
 
 int16_t LAN_Connect(sock_t sock, ipv4_addr_t addr, uint16_t port);
@@ -43,4 +42,16 @@ int16_t LAN_Connect(sock_t sock, ipv4_addr_t addr, uint16_t port);
 int32_t LAN_Send(sock_t sock, uint8_t* data, uint32_t len);
 int32_t LAN_Recv(sock_t sock, uint8_t* out_data, uint32_t len);
 
+static ALWAYS_INLINE uint8_t IPAddr_IsInvalid(ipv4_addr_t addr)
+{
+    return (addr.bytes[0] == 0xFF) &&
+           (addr.bytes[1] == 0xFF) &&
+           (addr.bytes[2] == 0xFF) &&
+           (addr.bytes[3] == 0xFF);
+}
+
+static ALWAYS_INLINE uint8_t Port_IsInvalid(uint32_t port)
+{
+    return (port == 0xFFFFFFFF);
+}
 

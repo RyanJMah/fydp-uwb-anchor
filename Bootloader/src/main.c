@@ -1,10 +1,8 @@
+#include "nrf_delay.h"
+
 #include "gl_log.h"
 #include "lan.h"
 #include "flash_config_data.h"
-
-#include "anchor_config.h"
-
-#include "nrf_delay.h"
 
 static void w5500_isr( nrf_drv_gpiote_pin_t pin,
                        nrf_gpiote_polarity_t action )
@@ -38,9 +36,32 @@ int main(void)
     ret_code_t err_code;
     int        sock_err_code;
 
-    sock_err_code = LAN_Connect(DFU_SOCK_NUM, gp_persistent_conf->server_ip_addr[0], 6900);
-    require( sock_err_code > 0, err_handler);
+    // Find a server to connect to
+    for (uint8_t i = 0; i < NUM_FALLACK_SERVERS; i++)
+    {
+        if ( Port_IsInvalid(gp_persistent_conf->server_port[i]) ||
+             IPAddr_IsInvalid(gp_persistent_conf->server_ip_addr[i]) )
+        {
+            continue;
+        }
 
+        sock_err_code = LAN_Connect(DFU_SOCK_NUM, gp_persistent_conf->server_ip_addr[0], 6900);
+
+        if ( sock_err_code > 0 )
+        {
+            break;
+        }
+
+        GL_LOG("Failed to connect to server %d, trying next...\n", i);
+    }
+
+    if ( sock_err_code <= 0 )
+    {
+        GL_LOG("Failed to connect to any server, aborting...\n");
+        goto err_handler;
+    }
+
+    // Mainloop
     while (1)
     {
         GL_LOG("sending msg...\n");
@@ -51,10 +72,10 @@ int main(void)
 
 err_handler:
     GL_LOG("DFU FATAL ERROR: err_code=%d, sock_err_code=%d\n", err_code, sock_err_code);
-    while (1)
-    {
-        // Do nothing...
-    }
+
+    // Auto-reboot after 5 seconds
+    nrf_delay_ms(5000);
+    NVIC_SystemReset();
 
     return 0;
 }

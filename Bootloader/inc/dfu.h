@@ -9,6 +9,7 @@
  * MACROS
  ************************************************************/
 #define DFU_PACKET_SIZE     sizeof(DFU_PayloadChunk_t)
+#define DFU_SERVER_PORT     ( 6900 )
 
 /*************************************************************
  * TYPE DEFINITIONS
@@ -17,6 +18,7 @@ typedef struct __attribute__((packed))
 {
     uint32_t crc32;
     uint32_t payload_num_bytes;
+    uint8_t  update_provisioning_data;
 } DFU_Metadata_t;
 
 typedef struct __attribute__((packed))
