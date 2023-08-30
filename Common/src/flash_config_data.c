@@ -1,7 +1,12 @@
 #include "nrf_fstorage.h"
-#include "nrf_fstorage_nvmc.h"
 #include "nrf_log_ctrl.h"
 #include "crc32.h"
+
+#ifdef GL_BOOTLOADER
+    #include "nrf_fstorage_nvmc.h"
+#else
+    #include "nrf_fstorage_sd.h"
+#endif
 
 #include "gl_log.h"
 #include "flash_memory_map.h"
@@ -78,7 +83,14 @@ ret_code_t FlashConfigData_Init(void)
     ret_code_t err_code;
 
     // Initialize the flash storage module
+
+// Use SD for app, NVMC for bootloader
+#ifdef GL_BOOTLOADER
     err_code = nrf_fstorage_init(&g_app_fstorage, &nrf_fstorage_nvmc, NULL);
+#else
+    err_code = nrf_fstorage_init(&g_app_fstorage, &nrf_fstorage_sd, NULL);
+#endif
+
     require_noerr(err_code, exit);
 
     /*

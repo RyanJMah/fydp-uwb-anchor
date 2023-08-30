@@ -59,7 +59,8 @@
 #include "cmsis_os.h"
 #endif
 
-#include "anchor_config.h"
+// #include "anchor_config.h"
+#include "flash_config_data.h"
 #include "socket.h"
 
 //M20150401 : Typing Error
@@ -430,7 +431,7 @@ int32_t recv(uint8_t sn, uint8_t * buf, uint16_t len)
         {
             // osSignalWait(LAN_TASK_RECV_INTERRUPT_SIGNAL, osWaitForever);
             // osDelay(1);
-            if ( (osKernelSysTick() - start_ticks ) > SOCKET_RECV_TIMEOUT )
+            if ( (osKernelSysTick() - start_ticks ) > gp_persistent_conf->socket_recv_timeout_ms )
             {
                 break;
             }

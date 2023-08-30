@@ -22,7 +22,6 @@
 
 #define MQTT_CLIENT_IDENTIFIER      "GuidingLite_Anchor_" STR(ANCHOR_ID)
 
-#define PROJECT_NAME_               "GuidingLite - UWB Anchor Apple NI - FreeRTOS"
-#define BOARD_NAME_                 "GL_Anchor_" STR(ANCHOR_ID)
+#define BOARD_NAME_FMT              "GL_Anchor_" STR(ANCHOR_ID)
 #define OS_NAME_                    "FreeRTOS"
 #define APPLICATION_NAME_           "UWB Anchor Apple NI"

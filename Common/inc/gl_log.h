@@ -11,12 +11,9 @@
  * black box (which is literally, a black box lol)
  */
 
-#ifdef GL_BOOTLOADER
-
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
-#include "macros.h"
 
 #define GL_LOG(fmt, ...)                        \
     do                                          \
@@ -24,6 +21,11 @@
         NRF_LOG_RAW_INFO(fmt, ##__VA_ARGS__);   \
         NRF_LOG_PROCESS();                      \
     } while (0)
+
+
+#ifdef GL_BOOTLOADER
+
+#include "macros.h"
 
 ALWAYS_INLINE void GL_LOG_INIT(void)
 {
@@ -43,13 +45,5 @@ ALWAYS_INLINE void GL_LOG_INIT(void)
 
     GL_LOG("\n");
 }
-
-#else
-// Application
-
-#include "deca_dbg.h"
-
-// Eventually, send logs over MQTT as well
-#define GL_LOG(fmt, ...)    diag_printf(fmt, ##__VA_ARGS__)
 
 #endif

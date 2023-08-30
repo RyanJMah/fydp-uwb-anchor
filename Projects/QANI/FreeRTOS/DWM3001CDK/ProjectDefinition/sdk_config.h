@@ -46,6 +46,11 @@
 #ifdef USE_APP_CONFIG
 #include "app_config.h"
 #endif
+
+#ifndef CRC32_ENABLED
+#define CRC32_ENABLED 1
+#endif
+
 // <h> Board Support 
 
 //==========================================================

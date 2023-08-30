@@ -1,5 +1,5 @@
 #include "cmsis_os.h"
-#include "anchor_config.h"
+#include "flash_config_data.h"
 #include "fira_helper.h"
 #include "macros.h"
 #include "gl_log.h"
@@ -35,8 +35,8 @@ static osTimerDef(g_heartbeat_timer, _send_heartbeat);
 static void interrupt_pin_handler( nrf_drv_gpiote_pin_t pin,
                                    nrf_gpiote_polarity_t action )
 {
-    // diag_printf("GOT W5500 INTERRUPT\n");
-    // diag_printf("sir=%d\n", getSIR());
+    // GL_LOG("GOT W5500 INTERRUPT\n");
+    // GL_LOG("sir=%d\n", getSIR());
 
     if ( action != GPIOTE_CONFIG_POLARITY_HiToLo )
     {
@@ -73,9 +73,8 @@ static ALWAYS_INLINE void _clear_interrupts(void)
     }
 }
 
-static void _LANTask_Main(void const* args UNUSED)
+static ALWAYS_INLINE void _LANTask_Init(void)
 {
-    MqttRetCode_t err_code;
 
     GL_LOG("INITIALIZING MQTT AND LAN...\n");
 
@@ -83,10 +82,11 @@ static void _LANTask_Main(void const* args UNUSED)
     LAN_Init( interrupt_pin_handler );
 
     // Initialize MQTT
-    err_code = MqttClient_Init();
+    MqttRetCode_t err_code = MqttClient_Init();
+
     if ( err_code != MQTT_OK )
     {
-        diag_printf("FAILED TO CONNECT TO BROKER, err_code=%d\n", err_code);
+        GL_LOG("FAILED TO CONNECT TO BROKER, err_code=%d\n", err_code);
         NVIC_SystemReset();
     }
 
@@ -95,12 +95,19 @@ static void _LANTask_Main(void const* args UNUSED)
                                           osTimerPeriodic,
                                           NULL );
     osTimerStart( g_heartbeat_timer_id, MQTT_HEARTBEAT_PERIODICITY_MS );
+}
+
+static void _LANTask_Main(void const* args UNUSED)
+{
+    MqttRetCode_t err_code;
+
+    _LANTask_Init();
 
     while (1)
     {
         osSignalWait(RECV_INTERRUPT_SIGNAL, osWaitForever);
 
-        // diag_printf("RECEIVED MESSAGE!");
+        // GL_LOG("RECEIVED MESSAGE!");
 
         err_code = MqttClient_ManageRunLoop();
         switch (err_code)
@@ -110,7 +117,7 @@ static void _LANTask_Main(void const* args UNUSED)
             case MQTT_ILLEGAL_STATE:
             case MQTT_SOCK_INTERNAL_ERR:
             {
-                diag_printf("ManageRunLoop failed: err_code=%d\n", err_code);
+                GL_LOG("ManageRunLoop failed: err_code=%d\n", err_code);
                 NVIC_SystemReset();
             }
 
@@ -136,7 +143,7 @@ void LANTask_Init(void)
 
     if ( g_lan_task_id == NULL )
     {
-        diag_printf("FAILED TO CREATE LAN TASK...\n");
+        GL_LOG("FAILED TO CREATE LAN TASK...\n");
     }
     //////////////////////////////////////////////////////////////////////////
 }

@@ -75,8 +75,8 @@
 #include "nrf_sdh.h"
 #endif
 
-#include "flash_memory_map.h"
-
+#include "sdk_errors.h"
+#include "flash_config_data.h"
 #include "lan_task.h"
 
 #ifndef ACCESSORY_RANGING_ROLE
@@ -88,9 +88,11 @@ extern void ble_init(char *gap_name);
 void init_logger_thread();
 #endif // NRF_LOG_ENABLED
 
+extern const char BoardName_Fmt[]; /**< Board name format string. */
+
 extern const char ApplicationName[]; /**< Name of Application release. */
 extern const char OsName[];
-extern const char BoardName[]; /**< Name of Target. Indicated in the advertising data. */
+extern char BoardName[]; /**< Name of Target. Indicated in the advertising data. */
 
 #define DEAD_BEEF 0xDEADBEEF /**< Value used as error code on stack dump, can be used to identify stack location on stack unwind. */
 
@@ -121,10 +123,6 @@ static void clock_init(void) {
     APP_ERROR_CHECK(err_code);
 }
 
-#include "nrf_delay.h"
-#include "boards.h"
-#include "gl_log.h"
-
 /**@brief Function for application main entry.
  */
 int main(void) {
@@ -134,10 +132,17 @@ int main(void) {
 
     hal_uwb.mcu_sleep_config();
 
-
 #if NRF_LOG_ENABLED
     init_logger_thread();
 #endif
+
+    // Initialize persistent config data
+    {
+        ret_code_t err_code = FlashConfigData_Init();
+        require_noerr(err_code, handle_err);
+
+        sprintf( BoardName, BoardName_Fmt, gp_persistent_conf->anchor_id );
+    }
 
     // Accessory Nearby Interaction Initialization
     niq_init(ResumeUwbTasks, StopUwbTask, (const void *)nrf_crypto_init,
@@ -152,8 +157,6 @@ int main(void) {
 
     // Start BLE 
     char advertising_name[32];
-
-    nrf_delay_ms(2000);
 
     // snprintf(advertising_name, sizeof(advertising_name), "%s (%08X)", (char*)BoardName, (unsigned int)NRF_FICR->DEVICEADDR[0]);
     snprintf(advertising_name, sizeof(advertising_name), "%s", (char*)BoardName);
@@ -189,7 +192,9 @@ int main(void) {
     // Start FreeRTOS scheduler.
     osKernelStart();
 
-    for (;;) {
+handle_err:
+    while (1)
+    {
         APP_ERROR_HANDLER(NRF_ERROR_FORBIDDEN);
     }
 }
