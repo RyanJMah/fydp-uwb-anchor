@@ -1,5 +1,7 @@
 #include "nrf_fstorage.h"
 #include "nrf_fstorage_nvmc.h"
+#include "nrf_dfu_mbr.h"
+#include "nrf_mbr.h"
 #include "crc32.h"
 #include "nrf.h"
 
@@ -94,6 +96,22 @@ void DFU_JumpToApp(void)
     const uint32_t current_isr_num = (__get_IPSR() & IPSR_ISR_Msk);
     const uint32_t new_msp         = *((uint32_t *)(vector_table_addr));                    // The app's Stack Pointer is found as the first word of the vector table.
     const uint32_t reset_handler   = *((uint32_t *)(vector_table_addr + sizeof(uint32_t))); // The app's Reset Handler is found as the second word of the vector table.
+
+    // Disable and clear interrupts
+    // Notice that this disables only 'external' interrupts (positive IRQn).
+    GL_LOG("Disabling interrupts. NVIC->ICER[0]: 0x%x", NVIC->ICER[0]);
+
+    NVIC->ICER[0]=0xFFFFFFFF;
+    NVIC->ICPR[0]=0xFFFFFFFF;
+#if defined(__NRF_NVIC_ISER_COUNT) && __NRF_NVIC_ISER_COUNT == 2
+    NVIC->ICER[1]=0xFFFFFFFF;
+    NVIC->ICPR[1]=0xFFFFFFFF;
+#endif
+
+    if ( nrf_dfu_mbr_irq_forward_address_set() != NRF_SUCCESS)
+    {
+        NRF_LOG_ERROR("Failed running nrf_dfu_mbr_irq_forward_address_set()");
+    }
 
     __set_CONTROL(0x00000000);   // Set CONTROL to its reset value 0.
     __set_PRIMASK(0x00000000);   // Set PRIMASK to its reset value 0.

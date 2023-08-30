@@ -17,14 +17,14 @@ int main(void)
 {
     GL_LOG_INIT();
 
-    // GL_LOG("ENTERING BOOTLOADER!\n");
+    GL_LOG("ENTERING BOOTLOADER!\n");
 
-    // GL_LOG("Reading config data from flash...\n");
+    GL_LOG("Reading config data from flash...\n");
     FlashConfigData_Init();
 
     if ( !gp_persistent_conf->fw_update_pending )
     {
-        // FlashConfigData_Deinit();
+        FlashConfigData_Deinit();
 
         // Jump straight to application code
         DFU_JumpToApp();
@@ -76,8 +76,8 @@ int main(void)
 err_handler:
     GL_LOG("DFU FATAL ERROR: err_code=%d, sock_err_code=%d\n", err_code, sock_err_code);
 
-    // Auto-reboot after 5 seconds
-    nrf_delay_ms(5000);
+    // Try again after a little
+    nrf_delay_ms(2000);
     NVIC_SystemReset();
 
     return 0;

@@ -51,6 +51,7 @@ SRC_FILES += \
 	$(SDK_ROOT)/components/libraries/sortlist/nrf_sortlist.c \
 	$(SDK_ROOT)/components/libraries/strerror/nrf_strerror.c \
 	$(SDK_ROOT)/components/libraries/crc32/crc32.c \
+	$(SDK_ROOT)/components/libraries/bootloader/dfu/nrf_dfu_mbr.c \
 	$(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_clock.c \
 	$(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_uart.c \
 	$(SDK_ROOT)/components/drivers_nrf/nrf_soc_nosd/nrf_nvic.c \
@@ -93,6 +94,9 @@ INC_FOLDERS += \
 	$(SDK_ROOT)/components/libraries/fstorage \
 	$(SDK_ROOT)/components/libraries/experimental_section_vars \
 	$(SDK_ROOT)/components/libraries/crc32 \
+	$(SDK_ROOT)/components/libraries/bootloader/dfu \
+	$(SDK_ROOT)/components/softdevice/mbr/headers \
+	$(SDK_ROOT)/components/libraries/bootloader \
 	$(SDK_ROOT)/integration/nrfx/legacy \
 	$(SDK_ROOT)/components/libraries/mutex \
 	$(SDK_ROOT)/external/fnmatch \
@@ -127,7 +131,7 @@ CFLAGS += -DCONFIG_GPIO_AS_PINRESET
 CFLAGS += -DFLOAT_ABI_HARD
 CFLAGS += -DNRF52833_XXAA
 CFLAGS += -mcpu=cortex-m4
-CFLAGS += -mthumb -mabi=aapcs
+CFLAGS += -mthumb
 CFLAGS += -Wall -Werror
 CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 
@@ -147,7 +151,7 @@ CXXFLAGS += $(OPT)
 # Assembler flags common to all targets
 ASMFLAGS += -g3
 ASMFLAGS += -mcpu=cortex-m4
-ASMFLAGS += -mthumb -mabi=aapcs
+ASMFLAGS += -mthumb
 ASMFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 ASMFLAGS += -DAPP_TIMER_V2
 ASMFLAGS += -DAPP_TIMER_V2_RTC1_ENABLED
@@ -157,7 +161,7 @@ ASMFLAGS += -DNRF52833_XXAA
 
 # Linker flags
 LDFLAGS += $(OPT)
-LDFLAGS += -mthumb -mabi=aapcs -L$(SDK_ROOT)/modules/nrfx/mdk -T$(LINKER_SCRIPT)
+LDFLAGS += -mthumb -L$(SDK_ROOT)/modules/nrfx/mdk -T$(LINKER_SCRIPT)
 LDFLAGS += -mcpu=cortex-m4
 LDFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 # let linker dump unused sections
