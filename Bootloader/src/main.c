@@ -17,13 +17,15 @@ int main(void)
 {
     GL_LOG_INIT();
 
-    GL_LOG("ENTERING BOOTLOADER!\n");
+    // GL_LOG("ENTERING BOOTLOADER!\n");
 
-    GL_LOG("Reading config data from flash...\n");
+    // GL_LOG("Reading config data from flash...\n");
     FlashConfigData_Init();
 
     if ( !gp_persistent_conf->fw_update_pending )
     {
+        // FlashConfigData_Deinit();
+
         // Jump straight to application code
         DFU_JumpToApp();
     }

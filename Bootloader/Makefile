@@ -23,7 +23,6 @@ SRC_FILES += \
 	$(SDK_ROOT)/components/libraries/log/src/nrf_log_backend_serial.c \
 	$(SDK_ROOT)/components/libraries/log/src/nrf_log_backend_uart.c \
 	$(SDK_ROOT)/components/libraries/log/src/nrf_log_default_backends.c \
-	$(SDK_ROOT)/components/libraries/log/src/nrf_log_backend_rtt.c \
 	$(SDK_ROOT)/components/libraries/log/src/nrf_log_frontend.c \
 	$(SDK_ROOT)/components/libraries/log/src/nrf_log_str_formatter.c \
 	$(SDK_ROOT)/components/libraries/util/app_error.c \
@@ -63,10 +62,7 @@ SRC_FILES += \
 	$(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_uart.c \
 	$(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_uarte.c \
 	$(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_gpiote.c \
-	$(SDK_ROOT)/modules/nrfx/mdk/system_nrf52833.c \
-	$(SDK_ROOT)/external/segger_rtt/SEGGER_RTT.c \
-	$(SDK_ROOT)/external/segger_rtt/SEGGER_RTT_Syscalls_GCC.c \
-	$(SDK_ROOT)/external/segger_rtt/SEGGER_RTT_printf.c \
+	$(SDK_ROOT)/modules/nrfx/mdk/system_nrf52833.c
 
 # Include folders common to all targets
 INC_FOLDERS += \
@@ -112,8 +108,7 @@ INC_FOLDERS += \
 	$(SDK_ROOT)/modules/nrfx/drivers/include \
 	$(SDK_ROOT)/modules/nrfx/hal \
 	$(SDK_ROOT)/external/fprintf \
-	$(SDK_ROOT)/components/libraries/log/src \
-	$(SDK_ROOT)/external/segger_rtt/
+	$(SDK_ROOT)/components/libraries/log/src
 
 # Libraries common to all targets
 LIB_FILES += \
@@ -137,13 +132,10 @@ CFLAGS += -Wall -Werror
 CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 
 CFLAGS += -DGL_BOOTLOADER
-CFLAGS += -DUSE_RTT_PRINT=1
 CFLAGS += -DINITIALIZE_USER_SECTIONS
 
 CFLAGS += -DBOARD_CUSTOM
 CFLAGS += -DBOARD_DWM3001_A1
-
-CFLAGS += -DANCHOR_ID=$(ANCHOR_ID)
 
 # keep every function in a separate section, this allows linker to discard unused ones
 CFLAGS += -ffunction-sections -fdata-sections -fno-strict-aliasing

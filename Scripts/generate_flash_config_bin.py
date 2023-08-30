@@ -10,7 +10,7 @@ BIN_DIR       = os.path.join(REPO_ROOT_DIR, "Provisioning_Images")
 FLASH_PAGE_SIZE = 4096
 
 # Refer to ./Common/flash_memory_map.h
-FLASH_CONFIG_START_ADDR = 0x00005000
+FLASH_CONFIG_START_ADDR = 0x00021000
 FLASH_CONFIG_END_ADDR   = FLASH_CONFIG_START_ADDR + 2*FLASH_PAGE_SIZE
 
 NUM_FALLBACK_SERVERS    = 10
@@ -88,7 +88,7 @@ def main():
     #########################################################################
     swap_count = 0
 
-    fw_update_pending = 1
+    fw_update_pending = 0
 
     anchor_id = int(sys.argv[-1])
 

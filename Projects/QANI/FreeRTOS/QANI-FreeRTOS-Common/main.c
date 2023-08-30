@@ -75,6 +75,8 @@
 #include "nrf_sdh.h"
 #endif
 
+#include "flash_memory_map.h"
+
 #include "lan_task.h"
 
 #ifndef ACCESSORY_RANGING_ROLE
@@ -119,10 +121,16 @@ static void clock_init(void) {
     APP_ERROR_CHECK(err_code);
 }
 
+#include "nrf_delay.h"
+#include "boards.h"
+#include "gl_log.h"
 
 /**@brief Function for application main entry.
  */
 int main(void) {
+    // Relocate the vector table to point to app vector table, not bootloader's
+    SCB->VTOR = (uint32_t)FLASH_APP_START_ADDR;
+
     // Initialize modules.
     clock_init();
     reporter_instance.init();
@@ -146,6 +154,14 @@ int main(void) {
 
     // Start BLE 
     char advertising_name[32];
+
+    // BoardInit();
+    // while (1)
+    // {
+    //     GL_LOG("FUCK FUCK PLEASE!!!!\n");
+    //     bsp_board_led_invert(BSP_BOARD_LED_0);
+    //     nrf_delay_ms(250);
+    // }
 
     // snprintf(advertising_name, sizeof(advertising_name), "%s (%08X)", (char*)BoardName, (unsigned int)NRF_FICR->DEVICEADDR[0]);
     snprintf(advertising_name, sizeof(advertising_name), "%s", (char*)BoardName);

@@ -103,7 +103,7 @@ void DFU_JumpToApp(void)
     ASSERT(current_isr_num == 0); // If this is triggered, the CPU is currently in an interrupt.
 
     // Relocate the vector table
-    SCB->VTOR = vector_table_addr;
+    // SCB->VTOR = vector_table_addr;
 
     // The CPU is in Thread mode (main context).
     jump_to_addr(new_msp, reset_handler); // Jump directly to the App's Reset Handler.

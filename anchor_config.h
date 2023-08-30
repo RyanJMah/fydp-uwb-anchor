@@ -4,9 +4,7 @@
 
 #define SOCKET_RECV_TIMEOUT         ( 5000 )
 
-#ifndef ANCHOR_ID
-#error "ANCHOR_ID is not defined"
-#endif
+#define ANCHOR_ID                   1
 
 #define ANCHOR_MAC_ADDR             {0x00, 0x08, 0xdc, 0x00, 0xab, ANCHOR_ID}
 

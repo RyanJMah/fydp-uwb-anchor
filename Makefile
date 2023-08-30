@@ -47,7 +47,7 @@ endif
 
 .PHONY: all
 all:
-	@$(EM_BUILD) -D MAKEFILE_ANCHOR_ID=$(ANCHOR_ID) -echo -config "Common" $(DWM3001CDK_PROJ_XML) 2>&1
+	@$(EM_BUILD) -echo -config "Common" $(DWM3001CDK_PROJ_XML) 2>&1
 	@$(SIZE) $(TARGET_ELF)
 
 .PHONY: clean
