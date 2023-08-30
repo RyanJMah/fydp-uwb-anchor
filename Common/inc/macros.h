@@ -6,30 +6,32 @@
 #define STR_IMPL_(x) #x      // stringify argument
 #define STR(x) STR_IMPL_(x)  // indirection to expand argument macros
 
+#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+
 #include "gl_log.h"
 
 // Assert macros from: https://github.com/apple/darwin-xnu/blob/main/EXTERNAL_HEADERS/AssertMacros.h
-#define require_noerr(err_code, exception_label)                            \
-    do                                                                      \
-    {                                                                       \
-        if ( __builtin_expect(0 != (err_code), 0) )                         \
-        {                                                                   \
-            GL_LOG("Error %d at %s:%d\n", err_code, __FILE__, __LINE__);    \
-            goto exception_label;                                           \
-        }                                                                   \
+#define require_noerr(err_code, exception_label)                                \
+    do                                                                          \
+    {                                                                           \
+        if ( __builtin_expect(0 != (err_code), 0) )                             \
+        {                                                                       \
+            GL_LOG("Error %d at %s:%d\n", err_code, __FILENAME__, __LINE__);    \
+            goto exception_label;                                               \
+        }                                                                       \
     } while ( 0 )
 
-#define require_noerr_action(err_code, exception_label, action)             \
-    do                                                                      \
-    {                                                                       \
-        if ( __builtin_expect(0 != (err_code), 0) )                         \
-        {                                                                   \
-            {                                                               \
-                action;                                                     \
-            }                                                               \
-            GL_LOG("Error %d at %s:%d\n", err_code, __FILE__, __LINE__);    \
-            goto exception_label;                                           \
-        }                                                                   \
+#define require_noerr_action(err_code, exception_label, action)                 \
+    do                                                                          \
+    {                                                                           \
+        if ( __builtin_expect(0 != (err_code), 0) )                             \
+        {                                                                       \
+            {                                                                   \
+                action;                                                         \
+            }                                                                   \
+            GL_LOG("Error %d at %s:%d\n", err_code, __FILENAME__, __LINE__);    \
+            goto exception_label;                                               \
+        }                                                                       \
     } while ( 0 )
 
 #define require(assertion, exception_label)                                             \
@@ -37,7 +39,7 @@
     {                                                                                   \
         if ( __builtin_expect(!(assertion), 0) )                                        \
         {                                                                               \
-            GL_LOG("Failed assertion " #assertion " at %s:%d\n", __FILE__, __LINE__);   \
+            GL_LOG("Failed assertion at %s:%d\n", __FILENAME__, __LINE__);              \
             goto exception_label;                                                       \
         }                                                                               \
     } while ( 0 )
@@ -50,7 +52,7 @@
             {                                                                           \
                 action;                                                                 \
             }                                                                           \
-            GL_LOG("Failed assertion " #assertion " at %s:%d\n", __FILE__, __LINE__);   \
+            GL_LOG("Failed assertion at %s:%d\n", __FILENAME__, __LINE__);              \
             goto exceptionLabel;                                                        \
         }                                                                               \
     } while ( 0 )

@@ -21,6 +21,7 @@ int main(void)
 
     GL_LOG("ENTERING BOOTLOADER!\n");
 
+    // This needs to be here, idk exactly what it does, but it does some weird stuff that is necessary (apparently)
     nrf_bootloader_mbr_addrs_populate();
 
     GL_LOG("Reading config data from flash...\n");
