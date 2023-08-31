@@ -24,5 +24,5 @@ MQTT_SOCK_NUM = ( 1 )
 MDNS_SOCK_NUM = ( 2 )
 DHCP_SOCK_NUM = ( 3 )
 DFU_SOCK_NUM = ( 4 )
-MAX_HOSTNAME_CHARS = ( 256 )
+Skipping: MAX_HOSTNAME_CHARS = ( FlashDataConfig_FieldLen_Hostname_len )
 

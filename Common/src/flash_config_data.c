@@ -1,3 +1,4 @@
+#include "nrf_error.h"
 #include "nrf_fstorage.h"
 #include "nrf_log_ctrl.h"
 #include "crc32.h"
@@ -20,6 +21,15 @@
  ************************************************************/
 #define FLASH_CONFIG_DATA_PAGE1_ADDR    ( FLASH_CONFIG_DATA_START_ADDR )
 #define FLASH_CONFIG_DATA_PAGE2_ADDR    ( FLASH_CONFIG_DATA_START_ADDR + FLASH_PAGE_SIZE )
+
+/*************************************************************
+ * TYPE DEFINITIONS
+ ************************************************************/
+typedef enum
+{
+    PAGE_1 = 0,
+    PAGE_2
+} FlashConfig_Page_t;
 
 /*************************************************************
  * GLOBAL VARIABLES
@@ -49,9 +59,53 @@ static uint32_t _compute_crc(FlashConfigData *p_data)
                            NULL );
 }
 
-static uint8_t _verify_crc(FlashConfigData *p_data)
+static bool _verify_crc(FlashConfigData *p_data)
 {
     return p_data->crc32 == _compute_crc(p_data);
+}
+
+static ret_code_t _pb_decode_from_flash( FlashConfig_Page_t page,
+                                         pb_istream_t* stream,
+                                         uint8_t* buff,
+                                         uint32_t buff_len )
+{
+    ret_code_t err_code;
+    bool pb_status;
+
+    uint32_t addr;
+    switch (page)
+    {
+        case PAGE_1:
+        {
+            addr = FLASH_CONFIG_DATA_PAGE1_ADDR;
+            break;
+        }
+
+        case PAGE_2:
+        {
+            addr = FLASH_CONFIG_DATA_PAGE2_ADDR;
+            break;
+        }
+
+        default:
+        {
+            return NRF_ERROR_INVALID_PARAM;
+        }
+    }
+
+    // Read from flash
+    err_code = nrf_fstorage_read( &g_app_fstorage,
+                                  addr,
+                                  buff,
+                                  buff_len );
+    require_noerr(err_code, exit);
+
+    // Decode the config data from the page
+    pb_status = pb_decode(stream, FlashConfigData_fields, &g_persistent_conf);
+    require_action(pb_status == 1, exit, err_code = NRF_ERROR_INTERNAL);
+
+exit:
+    return err_code;
 }
 
 /*************************************************************
@@ -65,8 +119,6 @@ ret_code_t FlashConfigData_Init(void)
     }
 
     ret_code_t err_code;
-    // bool pb_status;
-
 
 // Use SD for app, NVMC for bootloader
 #ifdef GL_BOOTLOADER
@@ -77,68 +129,61 @@ ret_code_t FlashConfigData_Init(void)
     require_noerr(err_code, exit);
 #endif
 
+    bool page1_crc_good, page2_crc_good;
+    uint32_t page1_swap_count, page2_swap_count;
+
     /*
      * Stack allocate a buffer that can read a whole page, there
      * needs be enough stack space for this, see Makefile -D__STACK_SIZE=8192
      */
-    // uint8_t page_buff[FLASH_PAGE_SIZE];
+    uint8_t page_buff[FLASH_PAGE_SIZE];
 
-    // // Protobuf input stream
-    // pb_istream_t istream = pb_istream_from_buffer( page_buff, sizeof(page_buff) );
+    // Protobuf input stream
+    pb_istream_t istream = pb_istream_from_buffer( page_buff, sizeof(page_buff) );
 
-    // // Read from page1 first
-    // err_code = nrf_fstorage_read( &g_app_fstorage,
-    //                               FLASH_CONFIG_DATA_PAGE1_ADDR,
-    //                               page_buff,
-    //                               sizeof(page_buff) );
-    // require_noerr(err_code, exit);
-
-    // Decode the config data from the page
-    // pb_status = pb_decode(&istream, FlashConfigData_fields, &g_persistent_conf);
-
-    /*
-     * Read from both pages to determine which one is
-     * active and which one is swap...
-     */
-    FlashConfigData page1, page2;
-
-    err_code = nrf_fstorage_read( &g_app_fstorage,
-                                  FLASH_CONFIG_DATA_PAGE1_ADDR,
-                                  &page1,
-                                  sizeof(FlashConfigData) );
+    // Read from page1 first
+    err_code = _pb_decode_from_flash( PAGE_1,
+                                      &istream,
+                                      page_buff,
+                                      sizeof(page_buff) );
     require_noerr(err_code, exit);
 
-    err_code = nrf_fstorage_read( &g_app_fstorage,
-                                  FLASH_CONFIG_DATA_PAGE2_ADDR,
-                                  &page2,
-                                  sizeof(FlashConfigData) );
+    // Verify page1 CRC
+    page1_crc_good   = _verify_crc(&g_persistent_conf);
+    page1_swap_count = g_persistent_conf.swap_count;
+
+    // Read from page2
+    err_code = _pb_decode_from_flash( PAGE_2,
+                                      &istream,
+                                      page_buff,
+                                      sizeof(page_buff) );
     require_noerr(err_code, exit);
 
-    // Verify CRC for both pages
-    uint8_t page1_crc_good = _verify_crc(&page1);
-    uint8_t page2_crc_good = _verify_crc(&page2);
+    // Verify page2 CRC
+    page2_crc_good   = _verify_crc(&g_persistent_conf);
+    page2_swap_count = g_persistent_conf.swap_count;
 
     // Select which page should be active and which should be swap
-    FlashConfigData *p_active_page;
+    FlashConfig_Page_t active_page;
 
     if ( page1_crc_good && page2_crc_good )
     {
         // If both page's CRC is good, select the higher swap count
         GL_LOG("Both pages CRC is valid, selecting the page with the highest swap count...\n");
 
-        if (page1.swap_count > page2.swap_count)
+        if (page1_swap_count > page2_swap_count)
         {
             GL_LOG("Selecting page1 as the active page and page2 as swap...\n");
 
-            p_active_page      = &page1;
+            active_page        = PAGE_1;
             g_active_page_addr = FLASH_CONFIG_DATA_PAGE1_ADDR;
             g_swap_page_addr   = FLASH_CONFIG_DATA_PAGE2_ADDR;
         }
-        else if (page2.swap_count > page1.swap_count)
+        else if (page2_swap_count > page1_swap_count)
         {
             GL_LOG("Selecting page2 as the active page and page1 as swap...\n");
 
-            p_active_page      = &page2;
+            active_page        = PAGE_2;
             g_active_page_addr = FLASH_CONFIG_DATA_PAGE2_ADDR;
             g_swap_page_addr   = FLASH_CONFIG_DATA_PAGE1_ADDR;
         }
@@ -148,7 +193,7 @@ ret_code_t FlashConfigData_Init(void)
             GL_LOG("WARNING: Both pages have the same swap count\n");
             GL_LOG("defaulting to page 1 as the active page and page2 as swap...\n");
 
-            p_active_page      = &page1;
+            active_page        = PAGE_1;
             g_active_page_addr = FLASH_CONFIG_DATA_PAGE1_ADDR;
             g_swap_page_addr   = FLASH_CONFIG_DATA_PAGE2_ADDR;
         }
@@ -158,7 +203,7 @@ ret_code_t FlashConfigData_Init(void)
         // If only page1 has good CRC, select page1 as active
         GL_LOG("WARNING: page2 CRC is invalid, selecting page1 as active...\n");
 
-        p_active_page      = &page1;
+        active_page        = PAGE_1;
         g_active_page_addr = FLASH_CONFIG_DATA_PAGE1_ADDR;
         g_swap_page_addr   = FLASH_CONFIG_DATA_PAGE2_ADDR;
     }
@@ -167,7 +212,7 @@ ret_code_t FlashConfigData_Init(void)
         // If only page2 has good CRC, select page2 as active
         GL_LOG("WARNING: page1 CRC is invalid, selecting page2 as active...\n");
 
-        p_active_page      = &page2;
+        active_page        = PAGE_2;
         g_active_page_addr = FLASH_CONFIG_DATA_PAGE2_ADDR;
         g_swap_page_addr   = FLASH_CONFIG_DATA_PAGE1_ADDR;
     }
@@ -185,8 +230,12 @@ ret_code_t FlashConfigData_Init(void)
         }
     }
 
-    // memcpy the active page into the global config
-    memcpy( &g_persistent_conf, p_active_page, sizeof(FlashConfigData) );
+    // Read from the active page
+    err_code = _pb_decode_from_flash( active_page,
+                                      &istream,
+                                      page_buff,
+                                      sizeof(page_buff) );
+    require_noerr(err_code, exit);
 
     // Mark as initialized
     g_is_initialized = 1;

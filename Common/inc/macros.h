@@ -34,26 +34,26 @@
         }                                                                       \
     } while ( 0 )
 
-#define require(assertion, exception_label)                                             \
-    do                                                                                  \
-    {                                                                                   \
-        if ( __builtin_expect(!(assertion), 0) )                                        \
-        {                                                                               \
-            GL_LOG("Failed assertion at %s:%d\n", __FILENAME__, __LINE__);              \
-            goto exception_label;                                                       \
-        }                                                                               \
+#define require(assertion, exception_label)                                                 \
+    do                                                                                      \
+    {                                                                                       \
+        if ( __builtin_expect(!(assertion), 0) )                                            \
+        {                                                                                   \
+            GL_LOG("Failed assertion " #assertion " at %s:%d\n", __FILENAME__, __LINE__);   \
+            goto exception_label;                                                           \
+        }                                                                                   \
     } while ( 0 )
 
-#define require_action(assertion, exceptionLabel, action)                               \
-    do                                                                                  \
-    {                                                                                   \
-        if ( __builtin_expect(!(assertion), 0) )                                        \
-        {                                                                               \
-            {                                                                           \
-                action;                                                                 \
-            }                                                                           \
-            GL_LOG("Failed assertion at %s:%d\n", __FILENAME__, __LINE__);              \
-            goto exceptionLabel;                                                        \
-        }                                                                               \
+#define require_action(assertion, exceptionLabel, action)                                   \
+    do                                                                                      \
+    {                                                                                       \
+        if ( __builtin_expect(!(assertion), 0) )                                            \
+        {                                                                                   \
+            {                                                                               \
+                action;                                                                     \
+            }                                                                               \
+            GL_LOG("Failed assertion " #assertion " at %s:%d\n", __FILENAME__, __LINE__);   \
+            goto exceptionLabel;                                                            \
+        }                                                                                   \
     } while ( 0 )
 

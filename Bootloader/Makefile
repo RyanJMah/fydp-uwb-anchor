@@ -6,7 +6,7 @@ SDK_ROOT := ../SDK_BSP/Nordic/NORDIC_SDK_17_1_0
 $(OUTPUT_DIRECTORY)/$(TARGET).out: \
 	LINKER_SCRIPT  := ./gl_bootloader_nrf52.ld
 
-PROTOBUF_DIR               := ../Protobufs
+PROTOBUF_DIR := ../Protobufs
 include $(PROTOBUF_DIR)/Vars.mk
 
 SRC_FILES += $(wildcard ./src/*.c)

@@ -18,7 +18,7 @@
 #define DHCP_SOCK_NUM       ( 3 )
 #define DFU_SOCK_NUM        ( 4 )
 
-#define MAX_HOSTNAME_CHARS  ( 256 )
+#define MAX_HOSTNAME_CHARS  ( FlashDataConfig_FieldLen_Hostname_len )
 
 /*************************************************************
  * TYPE DEFINITIONS
