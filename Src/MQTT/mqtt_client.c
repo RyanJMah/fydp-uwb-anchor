@@ -35,7 +35,7 @@ static MQTTConnectInfo_t    g_connection_info;
 
 const ipv4_addr_t g_broker_addr =
 {
-    .bytes = MQTT_BROKER_ADDR
+    .octets = MQTT_BROKER_ADDR
 };
 
 /*************************************************************

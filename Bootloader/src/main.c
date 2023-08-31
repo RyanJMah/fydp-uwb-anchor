@@ -27,7 +27,7 @@ int main(void)
     GL_LOG("Reading config data from flash...\n");
     FlashConfigData_Init();
 
-    if ( !gp_persistent_conf->fw_update_pending )
+    if ( !g_persistent_conf.fw_update_pending )
     {
         FlashConfigData_Deinit();
 
@@ -47,13 +47,13 @@ int main(void)
     // Find a server to connect to
     for (uint8_t i = 0; i < NUM_FALLBACK_SERVERS; i++)
     {
-        if ( Port_IsInvalid(gp_persistent_conf->server_port[i]) ||
-             IPAddr_IsInvalid(gp_persistent_conf->server_ip_addr[i]) )
+        if ( Port_IsInvalid(g_persistent_conf.server_port[i]) ||
+             IPAddr_IsInvalid(g_persistent_conf.server_ip_addr[i]) )
         {
             continue;
         }
 
-        sock_err_code = LAN_Connect(DFU_SOCK_NUM, gp_persistent_conf->server_ip_addr[0], 6900);
+        sock_err_code = LAN_Connect(DFU_SOCK_NUM, g_persistent_conf.server_ip_addr[0], 6900);
 
         if ( sock_err_code > 0 )
         {

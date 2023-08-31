@@ -179,7 +179,6 @@ LDFLAGS += -Wl,--gc-sections
 # use newlib in nano version
 LDFLAGS += --specs=nano.specs
 
-$(TARGET): CFLAGS += -I$(PB_C_BUILD_DIR)
 $(TARGET): CFLAGS += -D__HEAP_SIZE=8192
 $(TARGET): CFLAGS += -D__STACK_SIZE=8192
 $(TARGET): ASMFLAGS += -D__HEAP_SIZE=8192

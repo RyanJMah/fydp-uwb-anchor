@@ -156,20 +156,20 @@ static ALWAYS_INLINE void _static_net_init(void)
 {
     memset( &g_net_info, 0, sizeof(g_net_info) );
 
-    memcpy( g_net_info.mac, gp_persistent_conf->mac_addr, sizeof(g_net_info.mac) );
+    memcpy( g_net_info.mac, g_persistent_conf.mac_addr, sizeof(g_net_info.mac) );
 
     g_net_info.dhcp = NETINFO_STATIC;
 
     memcpy( g_net_info.ip,
-            gp_persistent_conf->static_ip_addr.bytes,
+            g_persistent_conf.static_ip_addr.octets,
             sizeof(g_net_info.ip) );
 
     memcpy( g_net_info.gw,
-            gp_persistent_conf->static_gateway.bytes,
+            g_persistent_conf.static_gateway.octets,
             sizeof(g_net_info.gw) );
 
     memcpy( g_net_info.sn,
-            gp_persistent_conf->static_netmask.bytes,
+            g_persistent_conf.static_netmask.octets,
             sizeof(g_net_info.sn) );
 
     ctlnetwork(CN_SET_NETINFO, (void*)&g_net_info);
@@ -208,7 +208,7 @@ static ALWAYS_INLINE void _dhcp_net_init(void)
     getSNfromDHCP(g_net_info.sn);
     getDNSfromDHCP(g_net_info.dns);
 
-    memcpy( g_net_info.mac, gp_persistent_conf->mac_addr, sizeof(g_net_info.mac) );
+    memcpy( g_net_info.mac, g_persistent_conf.mac_addr, sizeof(g_net_info.mac) );
 
     ctlnetwork(CN_SET_NETINFO, (void*)&g_net_info);
 
@@ -246,7 +246,7 @@ void LAN_Init(nrfx_gpiote_evt_handler_t isr_func)
     spi1_master_init();
     user_ethernet_init();
 
-    if ( gp_persistent_conf->using_dhcp )
+    if ( g_persistent_conf.using_dhcp )
     {
         _dhcp_net_init();
     }
@@ -278,12 +278,12 @@ int16_t LAN_Connect(sock_t sock, ipv4_addr_t addr, uint16_t port)
 
     GL_LOG(
             "connecting to server hosted at %d.%d.%d.%d\n",
-            addr.bytes[0],
-            addr.bytes[1],
-            addr.bytes[2],
-            addr.bytes[3] );
+            addr.octets[0],
+            addr.octets[1],
+            addr.octets[2],
+            addr.octets[3] );
 
-    err_code = connect(sock, addr.bytes, port);
+    err_code = connect(sock, addr.octets, port);
     require( err_code > 0, exit );
 
 exit:

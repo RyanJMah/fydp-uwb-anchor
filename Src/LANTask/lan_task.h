@@ -9,7 +9,7 @@
  * MACROS
  ************************************************************/
 #define LAN_TASK_PRIORITY               ( osPriorityLow )
-#define MQTT_HEARTBEAT_PERIODICITY_MS   ( gp_persistent_conf->socket_recv_timeout_ms )
+#define MQTT_HEARTBEAT_PERIODICITY_MS   ( g_persistent_conf.socket_recv_timeout_ms )
 
 /*************************************************************
  * PUBLIC FUNCTIONS

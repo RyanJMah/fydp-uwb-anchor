@@ -1,29 +1,39 @@
 syntax = "proto3";
 
+/*
+ * nanopb supports fixed length fields, unlike a regular protobuf implementation
+ *  - Refer to: https://jpa.kapsi.fi/nanopb/docs/concepts.html
+ */
+import "nanopb.proto";
+
+message IPv4Address
+{
+    bytes octets = 1 [(nanopb).max_size = 4, (nanopb).fixed_length = true];          // A byte array of 4 elements to represent IPv4 address
+}
+
+message Hostname
+{
+    bytes hostname = 1 [(nanopb).max_size = 256, (nanopb).fixed_length = true];     // A byte array of 256 chars to represent hostname
+}
+
 message FlashConfigData
 {
-    uint32 swap_count = 1;
-    bool fw_update_pending = 2;
-    uint32 anchor_id = 3;
+    uint32 swap_count             = 1;
+    bool   fw_update_pending      = 2;
+    uint32 anchor_id              = 3;
     uint32 socket_recv_timeout_ms = 4;
-    bytes mac_addr = 5;         // A byte array of 6 elements
-    bool using_dhcp = 6;
+    bytes  mac_addr               = 5 [(nanopb).max_size = 16, (nanopb).fixed_length = true];   // A byte array of 6 elements
+    bool   using_dhcp             = 6;
 
-    message IPv4Address {
-        bytes ip = 1;           // A byte array of 4 elements to represent IPv4 address
-    }
-
-    message HostName {
-        bytes hostname = 1;     // A byte array of 256 elements to represent hostname
-    }
-
+    // If using DHCP, the following fields are ignored
     IPv4Address static_ip_addr = 7;
     IPv4Address static_netmask = 8;
     IPv4Address static_gateway = 9;
 
-    repeated HostName server_hostname = 10;     // You need to set NUM_FALLBACK_SERVERS on the application side
-    repeated IPv4Address server_ip_addr = 11;   // Same as above for NUM_FALLBACK_SERVERS
-    repeated uint32 server_port = 12;           // Same as above for NUM_FALLBACK_SERVERS
+    // NUM_FALLBACK_SERVERS = 10
+    repeated Hostname    server_hostname = 10 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    repeated IPv4Address server_ip_addr  = 11 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    repeated uint32      server_port     = 12 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
 
     uint32 crc32 = 13;
 }

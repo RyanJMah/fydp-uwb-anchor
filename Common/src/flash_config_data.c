@@ -8,6 +8,9 @@
     #include "nrf_fstorage_sd.h"
 #endif
 
+#include "pb_encode.h"
+#include "pb_decode.h"
+
 #include "gl_log.h"
 #include "flash_memory_map.h"
 #include "flash_config_data.h"
@@ -17,23 +20,6 @@
  ************************************************************/
 #define FLASH_CONFIG_DATA_PAGE1_ADDR    ( FLASH_CONFIG_DATA_START_ADDR )
 #define FLASH_CONFIG_DATA_PAGE2_ADDR    ( FLASH_CONFIG_DATA_START_ADDR + FLASH_PAGE_SIZE )
-
-// Number of bytes to pad the config data with so that it is a multiple of 4 bytes
-#define PADDING_BYTES           ( sizeof(uint32_t) - (sizeof(FlashConfigData_t) % 4) )
-
-/*************************************************************
- * TYPE DEFINITIONS
- ************************************************************/
-
-/*
- * This is bad, but python ctypes can't align to 32 bits on
- * a 64 bit machine, so we do it like this I guess...
- */
-typedef struct
-{
-    FlashConfigData_t data;
-    uint8_t           padding[PADDING_BYTES];
-} ConfData_WithPadding_t;
 
 /*************************************************************
  * GLOBAL VARIABLES
@@ -50,22 +36,20 @@ static uint8_t g_is_initialized = 0;
 static uint32_t g_active_page_addr;
 static uint32_t g_swap_page_addr;
 
-static ConfData_WithPadding_t g_conf_with_padding;
-
-FlashConfigData_t* gp_persistent_conf = &g_conf_with_padding.data;
+FlashConfigData g_persistent_conf;
 
 /*************************************************************
  * PRIVATE FUNCTIONS
  ************************************************************/
-static uint32_t _compute_crc(FlashConfigData_t *p_data)
+static uint32_t _compute_crc(FlashConfigData *p_data)
 {
     // Compute the crc32 of the config data, excluding the crc32 field
     return crc32_compute( (uint8_t*)p_data,
-                           sizeof(FlashConfigData_t) - sizeof(uint32_t),
+                           sizeof(FlashConfigData) - sizeof(uint32_t),
                            NULL );
 }
 
-static uint8_t _verify_crc(FlashConfigData_t *p_data)
+static uint8_t _verify_crc(FlashConfigData *p_data)
 {
     return p_data->crc32 == _compute_crc(p_data);
 }
@@ -97,18 +81,18 @@ ret_code_t FlashConfigData_Init(void)
      * Read from both pages to determine which one is
      * active and which one is swap...
      */
-    FlashConfigData_t page1, page2;
+    FlashConfigData page1, page2;
 
     err_code = nrf_fstorage_read( &g_app_fstorage,
                                   FLASH_CONFIG_DATA_PAGE1_ADDR,
                                   &page1,
-                                  sizeof(FlashConfigData_t) );
+                                  sizeof(FlashConfigData) );
     require_noerr(err_code, exit);
 
     err_code = nrf_fstorage_read( &g_app_fstorage,
                                   FLASH_CONFIG_DATA_PAGE2_ADDR,
                                   &page2,
-                                  sizeof(FlashConfigData_t) );
+                                  sizeof(FlashConfigData) );
     require_noerr(err_code, exit);
 
     // Verify CRC for both pages
@@ -116,7 +100,7 @@ ret_code_t FlashConfigData_Init(void)
     uint8_t page2_crc_good = _verify_crc(&page2);
 
     // Select which page should be active and which should be swap
-    FlashConfigData_t *p_active_page;
+    FlashConfigData *p_active_page;
 
     if ( page1_crc_good && page2_crc_good )
     {
@@ -183,7 +167,7 @@ ret_code_t FlashConfigData_Init(void)
     }
 
     // memcpy the active page into the global config
-    memcpy( gp_persistent_conf, p_active_page, sizeof(FlashConfigData_t) );
+    memcpy( &g_persistent_conf, p_active_page, sizeof(FlashConfigData) );
 
     // Mark as initialized
     g_is_initialized = 1;
@@ -207,26 +191,26 @@ uint8_t FlashConfigData_Validate(void)
         return 0;
     }
 
-    return _verify_crc(gp_persistent_conf);
+    return _verify_crc(&g_persistent_conf);
 }
 
 void FlashConfigData_Print(void)
 {
     GL_LOG("FlashConfigData: \n");
-    GL_LOG("  - swap_count:             %d\n", gp_persistent_conf->swap_count);
-    GL_LOG("  - fw_update_pending:      %d\n", gp_persistent_conf->fw_update_pending);
-    GL_LOG("  - anchor_id:              %d\n", gp_persistent_conf->anchor_id);
-    GL_LOG("  - socket_recv_timeout_ms: %d\n", gp_persistent_conf->socket_recv_timeout_ms);
+    GL_LOG("  - swap_count:             %d\n", g_persistent_conf.swap_count);
+    GL_LOG("  - fw_update_pending:      %d\n", g_persistent_conf.fw_update_pending);
+    GL_LOG("  - anchor_id:              %d\n", g_persistent_conf.anchor_id);
+    GL_LOG("  - socket_recv_timeout_ms: %d\n", g_persistent_conf.socket_recv_timeout_ms);
 
     // Pointer to array containing the mac address
-    uint8_t *p_mac_addr = gp_persistent_conf->mac_addr;
+    uint8_t *p_mac_addr = g_persistent_conf.mac_addr;
 
     GL_LOG("  - mac_addr:               %02X:%02X:%02X:%02X:%02X:%02X\n",
                 p_mac_addr[0], p_mac_addr[1], p_mac_addr[2],
                 p_mac_addr[3], p_mac_addr[4], p_mac_addr[5]  );
 
-    GL_LOG("  - using_dhcp:             %d\n", gp_persistent_conf->using_dhcp);
-    GL_LOG("  - crc32:                  %08X\n", gp_persistent_conf->crc32);
+    GL_LOG("  - using_dhcp:             %d\n", g_persistent_conf.using_dhcp);
+    GL_LOG("  - crc32:                  %08X\n", g_persistent_conf.crc32);
 }
 
 ret_code_t FlashConfigData_WriteBack(void)
@@ -239,10 +223,10 @@ ret_code_t FlashConfigData_WriteBack(void)
     ret_code_t err_code;
 
     // Increment the swap count
-    gp_persistent_conf->swap_count++;
+    g_persistent_conf.swap_count++;
 
     // Re-compute the CRC
-    gp_persistent_conf->crc32 = _compute_crc(gp_persistent_conf);
+    g_persistent_conf.crc32 = _compute_crc(&g_persistent_conf);
 
     // Erase the swap page before writing to it
     err_code = nrf_fstorage_erase( &g_app_fstorage,
@@ -254,8 +238,8 @@ ret_code_t FlashConfigData_WriteBack(void)
     // Write the config data to the swap page
     err_code = nrf_fstorage_write( &g_app_fstorage,
                                    g_swap_page_addr,
-                                   &g_conf_with_padding,
-                                   sizeof(g_conf_with_padding),
+                                   &g_persistent_conf,
+                                   sizeof(g_persistent_conf),
                                    NULL );
     require_noerr(err_code, exit);
 
@@ -279,20 +263,20 @@ ret_code_t FlashConfigData_RestoreFromSwap(void)
 
     ret_code_t err_code;
 
-    uint32_t swap_count = gp_persistent_conf->swap_count;
+    uint32_t swap_count = g_persistent_conf.swap_count;
 
     // Read the config data from the swap page
     err_code = nrf_fstorage_read( &g_app_fstorage,
                                   g_swap_page_addr,
-                                  gp_persistent_conf,
-                                  sizeof(FlashConfigData_t) );
+                                  &g_persistent_conf,
+                                  sizeof(FlashConfigData) );
     require_noerr(err_code, exit);
 
     /*
      * Take the max so that we are sure that this write is the
      * one that will be used in the future
      */
-    gp_persistent_conf->swap_count = MAX(swap_count, gp_persistent_conf->swap_count);
+    g_persistent_conf.swap_count = MAX(swap_count, g_persistent_conf.swap_count);
 
     // Write the config data to the active page
     err_code = FlashConfigData_WriteBack();

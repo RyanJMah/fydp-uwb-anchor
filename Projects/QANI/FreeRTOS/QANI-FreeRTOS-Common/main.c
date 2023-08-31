@@ -141,7 +141,7 @@ int main(void) {
         ret_code_t err_code = FlashConfigData_Init();
         require_noerr(err_code, handle_err);
 
-        sprintf( BoardName, BoardName_Fmt, gp_persistent_conf->anchor_id );
+        sprintf( BoardName, BoardName_Fmt, g_persistent_conf.anchor_id );
     }
 
     // Accessory Nearby Interaction Initialization
