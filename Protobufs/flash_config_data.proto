@@ -6,6 +6,16 @@ syntax = "proto3";
  */
 import "nanopb.proto";
 
+// Abusing enums to export field lengths to the C and Python code
+enum FlashDataConfig_FieldLen
+{
+    DUMMY = 0;
+    IPv4Address_len    = 4;
+    Hostname_len       = 256;
+    MacAddress_len     = 6;
+    NumFallbackServers = 10;
+}
+
 message IPv4Address
 {
     bytes octets = 1 [(nanopb).max_size = 4, (nanopb).fixed_length = true];          // A byte array of 4 elements to represent IPv4 address
@@ -22,7 +32,7 @@ message FlashConfigData
     bool   fw_update_pending      = 2;
     uint32 anchor_id              = 3;
     uint32 socket_recv_timeout_ms = 4;
-    bytes  mac_addr               = 5 [(nanopb).max_size = 16, (nanopb).fixed_length = true];   // A byte array of 6 elements
+    bytes  mac_addr               = 5 [(nanopb).max_size = 6, (nanopb).fixed_length = true];   // A byte array of 6 elements
     bool   using_dhcp             = 6;
 
     // If using DHCP, the following fields are ignored

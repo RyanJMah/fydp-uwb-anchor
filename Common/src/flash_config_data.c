@@ -36,7 +36,7 @@ static uint8_t g_is_initialized = 0;
 static uint32_t g_active_page_addr;
 static uint32_t g_swap_page_addr;
 
-FlashConfigData g_persistent_conf;
+FlashConfigData g_persistent_conf = FlashConfigData_init_zero;
 
 /*************************************************************
  * PRIVATE FUNCTIONS
@@ -65,17 +65,36 @@ ret_code_t FlashConfigData_Init(void)
     }
 
     ret_code_t err_code;
+    // bool pb_status;
 
-    // Initialize the flash storage module
 
 // Use SD for app, NVMC for bootloader
 #ifdef GL_BOOTLOADER
     err_code = nrf_fstorage_init(&g_app_fstorage, &nrf_fstorage_nvmc, NULL);
+    require_noerr(err_code, exit);
 #else
     err_code = nrf_fstorage_init(&g_app_fstorage, &nrf_fstorage_sd, NULL);
+    require_noerr(err_code, exit);
 #endif
 
-    require_noerr(err_code, exit);
+    /*
+     * Stack allocate a buffer that can read a whole page, there
+     * needs be enough stack space for this, see Makefile -D__STACK_SIZE=8192
+     */
+    // uint8_t page_buff[FLASH_PAGE_SIZE];
+
+    // // Protobuf input stream
+    // pb_istream_t istream = pb_istream_from_buffer( page_buff, sizeof(page_buff) );
+
+    // // Read from page1 first
+    // err_code = nrf_fstorage_read( &g_app_fstorage,
+    //                               FLASH_CONFIG_DATA_PAGE1_ADDR,
+    //                               page_buff,
+    //                               sizeof(page_buff) );
+    // require_noerr(err_code, exit);
+
+    // Decode the config data from the page
+    // pb_status = pb_decode(&istream, FlashConfigData_fields, &g_persistent_conf);
 
     /*
      * Read from both pages to determine which one is

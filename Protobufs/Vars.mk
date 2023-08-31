@@ -13,11 +13,23 @@ PB_C_BUILD_DIR  := $(PROTO_BUILD_DIR)/C
 PB_PY_BUILD_DIR := $(PROTO_BUILD_DIR)/Py
 
 # List of .proto files
-PROTO_SRC_FILES := $(wildcard $(PROTO_SRC_DIR)/*.proto)
+PROTO_SRC_FILES += $(wildcard $(PROTO_SRC_DIR)/*.proto)
+
+# Need to include this or protoc will complain
+PROTOC_INCLUDES += -I$(NANOPB_DIR)/generator/proto
+PROTOC_INCLUDES += -I$(PROTO_SRC_DIR)
 
 # Generated C sources and headers from .proto files
-PROTO_C_FILES := $(patsubst $(PROTO_SRC_DIR)/%.proto, $(PB_C_BUILD_DIR)/%.pb.c, $(PROTO_SRC_FILES))
-PROTO_H_FILES := $(patsubst $(PROTO_SRC_DIR)/%.proto, $(PB_C_BUILD_DIR)/%.pb.h, $(PROTO_SRC_FILES))
+PROTO_C_FILES  := $(addprefix $(PB_C_BUILD_DIR)/, $(notdir $(PROTO_SRC_FILES:.proto=.pb.c)))
+PROTO_H_FILES  := $(addprefix $(PB_C_BUILD_DIR)/, $(notdir $(PROTO_SRC_FILES:.proto=.pb.h)))
+
+# Need to include this for python or it will cause an import error
+PROTO_SRC_FILES += $(NANOPB_DIR)/generator/proto/nanopb.proto
+
+# Generated python sources from .proto files
+PROTO_PY_FILES := $(addprefix $(PB_PY_BUILD_DIR)/, $(notdir $(PROTO_SRC_FILES:.proto=.py)))
+
+vpath %.proto $(sort $(dir $(PROTO_SRC_FILES)))
 
 NANOPB_SRC_FILES += $(NANOPB_DIR)/pb_encode.c
 NANOPB_SRC_FILES += $(NANOPB_DIR)/pb_decode.c

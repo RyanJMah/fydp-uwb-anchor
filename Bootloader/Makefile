@@ -11,7 +11,7 @@ include $(PROTOBUF_DIR)/Vars.mk
 
 SRC_FILES += $(wildcard ./src/*.c)
 SRC_FILES += $(wildcard ../Common/src/*.c)
-SRC_FILES += $(PROTO_C_FILES)
+SRC_FILES += $(wildcard $(PB_C_BUILD_DIR)/*.c)
 SRC_FILES += $(NANOPB_SRC_FILES)
 
 SRC_FILES += \
