@@ -126,7 +126,7 @@ def process(fp, outfp, env = {}):
             try:
                 exec(stmt, env)
             except:
-                sys.stdout.write('Skipping: %s' % stmt)
+                sys.stderr.write('Skipping: %s' % stmt)
             else:
                 outfp.write(stmt)
         match = p_macro.match(line)
@@ -138,7 +138,7 @@ def process(fp, outfp, env = {}):
             try:
                 exec(stmt, env)
             except:
-                sys.stdout.write('Skipping: %s' % stmt)
+                sys.stderr.write('Skipping: %s' % stmt)
             else:
                 outfp.write(stmt)
         match = p_include.match(line)
@@ -162,7 +162,7 @@ def process(fp, outfp, env = {}):
                             '\n# Included from %s\n' % filename)
                     process(inclfp, outfp, env)
                 else:
-                    sys.stdout.write('Warning - could not find file %s\n' %
+                    sys.stderr.write('Warning - could not find file %s\n' %
                                      filename)
 
 if __name__ == '__main__':

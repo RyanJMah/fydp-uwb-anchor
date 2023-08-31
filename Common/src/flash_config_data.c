@@ -51,7 +51,7 @@ FlashConfigData g_persistent_conf = FlashConfigData_init_zero;
 /*************************************************************
  * PRIVATE FUNCTIONS
  ************************************************************/
-static uint32_t _compute_crc(FlashConfigData *p_data)
+static uint32_t _compute_crc(FlashConfigData* p_data)
 {
     // Compute the crc32 of the config data, excluding the crc32 field
     return crc32_compute( (uint8_t*)p_data,
@@ -59,7 +59,7 @@ static uint32_t _compute_crc(FlashConfigData *p_data)
                            NULL );
 }
 
-static bool _verify_crc(FlashConfigData *p_data)
+static bool _verify_crc(FlashConfigData* p_data)
 {
     return p_data->crc32 == _compute_crc(p_data);
 }
