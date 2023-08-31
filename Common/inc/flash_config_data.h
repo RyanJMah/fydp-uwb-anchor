@@ -25,9 +25,6 @@ uint8_t FlashConfigData_IsInitalized(void);
 // Only ever used by bootloader right before jumping to app code
 ret_code_t FlashConfigData_Deinit(void);
 
-// Returns 1 if the data is valid, 0 otherwise
-uint8_t FlashConfigData_Validate(void);
-
 void FlashConfigData_Print(void);
 
 ret_code_t FlashConfigData_WriteBack(void);

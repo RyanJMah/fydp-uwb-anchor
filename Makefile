@@ -102,7 +102,7 @@ include ./Protobufs/Makefile
 
 ################################################################################################
 .PHONY: everything
-everything: all bl config_imgs
+everything: pb all bl config_imgs
 
 .PHONY: clean_everything
 clean_everything: clean clean_bl clean_config_imgs clean_pb

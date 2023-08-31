@@ -189,7 +189,7 @@ $(TARGET): ASMFLAGS += -D__STACK_SIZE=8192
 LIB_FILES += -lc -lnosys -lm
 
 .PHONY: default
-default: $(PROTO_C_FILES) $(PROTO_H_FILES) $(TARGET)
+default: $(PROTO_C_FILES) $(PROTO_H_FILES) $(PROTO_PY_FILES) $(TARGET)
 
 include $(PROTOBUF_DIR)/Makefile
 

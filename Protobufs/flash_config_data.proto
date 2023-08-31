@@ -44,7 +44,5 @@ message FlashConfigData
     repeated Hostname    server_hostname = 10 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
     repeated IPv4Address server_ip_addr  = 11 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
     repeated uint32      server_port     = 12 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
-
-    uint32 crc32 = 13;
 }
 

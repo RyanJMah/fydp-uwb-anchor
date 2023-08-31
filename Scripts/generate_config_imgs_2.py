@@ -18,7 +18,7 @@ sys.path.append(PB_OUT_DIR)
 import flash_config_data_pb2 as pb
 
 # in case we want this in the future
-def crc32(data: bytes) -> int:
+def calc_crc32(data: bytes) -> int:
     crc = 0xFFFFFFFF
     for byte in data:
         crc ^= byte
@@ -156,14 +156,13 @@ def generate_anchor_config(anchor_id: int):
         flash_config.server_port.append( port )
 
     # Bytes of the struct, minus the uint32_t crc32 field
-    flash_config_bytes = flash_config.SerializeToString()[:-4]
+    flash_config_bytes = flash_config.SerializeToString()
 
-    # Calculate the CRC32 of the struct
-    flash_config.crc32 = crc32(flash_config_bytes)
+    # Calculate the CRC32 of the serialized protobuf
+    crc32 = calc_crc32(flash_config_bytes)
 
-    # Bytes to write to flash
-    img_bytes = flash_config.SerializeToString()
-    print(img_bytes)
+    # Append CRC32 to the serialized protobuf
+    img_bytes = flash_config_bytes + crc32.to_bytes(4, byteorder="little")
 
     # pad with FFs so it spans 2 pages
     img_bytes += bytes( [0xFF] * (FLASH_CONFIG_DATA_END_ADDR - FLASH_CONFIG_DATA_START_ADDR - len(img_bytes)) )
