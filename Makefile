@@ -47,7 +47,7 @@ endif
 
 ################################################################################################
 .PHONY: all
-all:
+all: pb
 	@$(EM_BUILD) -echo -config "Common" $(DWM3001CDK_PROJ_XML) 2>&1
 	@$(SIZE) $(TARGET_ELF)
 	$(call get_constants_from_headers)
@@ -97,11 +97,15 @@ flash_config_img: config_imgs
 ################################################################################################
 
 ################################################################################################
+include ./Protobufs/Makefile
+################################################################################################
+
+################################################################################################
 .PHONY: everything
 everything: all bl config_imgs
 
 .PHONY: clean_everything
-clean_everything: clean clean_bl clean_config_imgs
+clean_everything: clean clean_bl clean_config_imgs clean_pb
 
 .PHONY: flash_everything
 flash_everything: flash_erase flash flash_bl flash_config_img

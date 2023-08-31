@@ -6,8 +6,13 @@ SDK_ROOT := ../SDK_BSP/Nordic/NORDIC_SDK_17_1_0
 $(OUTPUT_DIRECTORY)/$(TARGET).out: \
 	LINKER_SCRIPT  := ./gl_bootloader_nrf52.ld
 
+PROTOBUF_DIR               := ../Protobufs
+include $(PROTOBUF_DIR)/Vars.mk
+
 SRC_FILES += $(wildcard ./src/*.c)
 SRC_FILES += $(wildcard ../Common/src/*.c)
+SRC_FILES += $(PROTO_C_FILES)
+SRC_FILES += $(NANOPB_SRC_FILES)
 
 SRC_FILES += \
 	../Wiznet/user_ethernet.c \
@@ -73,6 +78,7 @@ INC_FOLDERS += \
 	../ \
 	./inc \
 	../Common/inc \
+	$(NANOPB_INCLUDES) \
 	../Wiznet \
 	../Wiznet/ioLibrary_Driver/Ethernet \
 	../Wiznet/ioLibrary_Driver/Ethernet/W5500 \
@@ -173,6 +179,7 @@ LDFLAGS += -Wl,--gc-sections
 # use newlib in nano version
 LDFLAGS += --specs=nano.specs
 
+$(TARGET): CFLAGS += -I$(PB_C_BUILD_DIR)
 $(TARGET): CFLAGS += -D__HEAP_SIZE=8192
 $(TARGET): CFLAGS += -D__STACK_SIZE=8192
 $(TARGET): ASMFLAGS += -D__HEAP_SIZE=8192
@@ -182,21 +189,12 @@ $(TARGET): ASMFLAGS += -D__STACK_SIZE=8192
 # that may need symbols provided by these libraries.
 LIB_FILES += -lc -lnosys -lm
 
-.PHONY: default help
+.PHONY: default
+default: $(PROTO_C_FILES) $(PROTO_H_FILES) $(TARGET)
 
-# Default target - first one defined
-default: $(TARGET)
-
-# Print all targets that can be built
-help:
-	@echo following targets are available:
-	@echo           $(TARGET)
-	@echo           sdk_config - starting external tool for editing sdk_config.h
-	@echo           flash      - flashing binary
+include $(PROTOBUF_DIR)/Makefile
 
 TEMPLATE_PATH := $(SDK_ROOT)/components/toolchain/gcc
-
-
 include $(TEMPLATE_PATH)/Makefile.common
 
 $(foreach target, $(TARGET), $(call define_target, $(target)))

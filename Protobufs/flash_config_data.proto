@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+message FlashConfigData
+{
+    uint32 swap_count = 1;
+    bool fw_update_pending = 2;
+    uint32 anchor_id = 3;
+    uint32 socket_recv_timeout_ms = 4;
+    bytes mac_addr = 5;         // A byte array of 6 elements
+    bool using_dhcp = 6;
+
+    message IPv4Address {
+        bytes ip = 1;           // A byte array of 4 elements to represent IPv4 address
+    }
+
+    message HostName {
+        bytes hostname = 1;     // A byte array of 256 elements to represent hostname
+    }
+
+    IPv4Address static_ip_addr = 7;
+    IPv4Address static_netmask = 8;
+    IPv4Address static_gateway = 9;
+
+    repeated HostName server_hostname = 10;     // You need to set NUM_FALLBACK_SERVERS on the application side
+    repeated IPv4Address server_ip_addr = 11;   // Same as above for NUM_FALLBACK_SERVERS
+    repeated uint32 server_port = 12;           // Same as above for NUM_FALLBACK_SERVERS
+
+    uint32 crc32 = 13;
+}
+
