@@ -46,6 +46,8 @@ static uint8_t g_is_initialized = 0;
 static uint32_t g_active_page_addr;
 static uint32_t g_swap_page_addr;
 
+static uint8_t g_page_buff[FLASH_PAGE_SIZE];
+
 FlashConfigData g_persistent_conf = FlashConfigData_init_zero;
 
 /*************************************************************
@@ -65,9 +67,7 @@ static bool _verify_crc(FlashConfigData* p_data)
 }
 
 static ret_code_t _pb_decode_from_flash( FlashConfig_Page_t page,
-                                         pb_istream_t* stream,
-                                         uint8_t* buff,
-                                         uint32_t buff_len )
+                                         pb_istream_t* stream )
 {
     ret_code_t err_code;
     bool pb_status;
@@ -96,13 +96,43 @@ static ret_code_t _pb_decode_from_flash( FlashConfig_Page_t page,
     // Read from flash
     err_code = nrf_fstorage_read( &g_app_fstorage,
                                   addr,
-                                  buff,
-                                  buff_len );
+                                  g_page_buff,
+                                  sizeof(g_page_buff) );
     require_noerr(err_code, exit);
 
     // Decode the config data from the page
     pb_status = pb_decode(stream, FlashConfigData_fields, &g_persistent_conf);
     require_action(pb_status == 1, exit, err_code = NRF_ERROR_INTERNAL);
+
+exit:
+    return err_code;
+}
+
+static ret_code_t _pb_write_to_flash( pb_ostream_t* stream )
+{
+    ret_code_t err_code;
+    bool pb_status;
+
+    // Encode the config data
+    pb_status = pb_encode(stream, FlashConfigData_fields, &g_persistent_conf);
+    require_action(pb_status == 1, exit, err_code = NRF_ERROR_INTERNAL);
+
+    // need to align to 4 bytes
+    uint8_t padding = 4 - (stream->bytes_written % 4);
+
+    uint32_t bytes_to_write = MIN( sizeof(g_page_buff),
+                                   stream->bytes_written + padding );
+
+    // Pad the rest of the page with 0xFF
+    memset( &g_page_buff[stream->bytes_written], 0xFF, padding );
+
+    // Write to flash
+    err_code = nrf_fstorage_write( &g_app_fstorage,
+                                   g_active_page_addr,
+                                   g_page_buff,
+                                   bytes_to_write,
+                                   NULL );
+    require_noerr(err_code, exit);
 
 exit:
     return err_code;
@@ -132,35 +162,23 @@ ret_code_t FlashConfigData_Init(void)
     bool page1_crc_good, page2_crc_good;
     uint32_t page1_swap_count, page2_swap_count;
 
-    /*
-     * Stack allocate a buffer that can read a whole page, there
-     * needs be enough stack space for this, see Makefile -D__STACK_SIZE=8192
-     */
-    uint8_t page_buff[FLASH_PAGE_SIZE];
-
     // Protobuf input stream
-    pb_istream_t istream = pb_istream_from_buffer( page_buff, sizeof(page_buff) );
+    pb_istream_t istream = pb_istream_from_buffer( g_page_buff, sizeof(g_page_buff) );
 
     // Read from page1 first
-    err_code = _pb_decode_from_flash( PAGE_1,
-                                      &istream,
-                                      page_buff,
-                                      sizeof(page_buff) );
+    err_code = _pb_decode_from_flash( PAGE_1, &istream );
     require_noerr(err_code, exit);
 
     // Verify page1 CRC
-    page1_crc_good   = _verify_crc(&g_persistent_conf);
+    page1_crc_good   = _verify_crc( &g_persistent_conf );
     page1_swap_count = g_persistent_conf.swap_count;
 
     // Read from page2
-    err_code = _pb_decode_from_flash( PAGE_2,
-                                      &istream,
-                                      page_buff,
-                                      sizeof(page_buff) );
+    err_code = _pb_decode_from_flash( PAGE_2, &istream );
     require_noerr(err_code, exit);
 
     // Verify page2 CRC
-    page2_crc_good   = _verify_crc(&g_persistent_conf);
+    page2_crc_good   = _verify_crc( &g_persistent_conf );
     page2_swap_count = g_persistent_conf.swap_count;
 
     // Select which page should be active and which should be swap
@@ -171,7 +189,7 @@ ret_code_t FlashConfigData_Init(void)
         // If both page's CRC is good, select the higher swap count
         GL_LOG("Both pages CRC is valid, selecting the page with the highest swap count...\n");
 
-        if (page1_swap_count > page2_swap_count)
+        if ( page1_swap_count > page2_swap_count )
         {
             GL_LOG("Selecting page1 as the active page and page2 as swap...\n");
 
@@ -179,7 +197,7 @@ ret_code_t FlashConfigData_Init(void)
             g_active_page_addr = FLASH_CONFIG_DATA_PAGE1_ADDR;
             g_swap_page_addr   = FLASH_CONFIG_DATA_PAGE2_ADDR;
         }
-        else if (page2_swap_count > page1_swap_count)
+        else if ( page2_swap_count > page1_swap_count )
         {
             GL_LOG("Selecting page2 as the active page and page1 as swap...\n");
 
@@ -231,10 +249,7 @@ ret_code_t FlashConfigData_Init(void)
     }
 
     // Read from the active page
-    err_code = _pb_decode_from_flash( active_page,
-                                      &istream,
-                                      page_buff,
-                                      sizeof(page_buff) );
+    err_code = _pb_decode_from_flash( active_page, &istream );
     require_noerr(err_code, exit);
 
     // Mark as initialized
@@ -303,12 +318,9 @@ ret_code_t FlashConfigData_WriteBack(void)
                                    NULL );
     require_noerr(err_code, exit);
 
-    // Write the config data to the swap page
-    err_code = nrf_fstorage_write( &g_app_fstorage,
-                                   g_swap_page_addr,
-                                   &g_persistent_conf,
-                                   sizeof(g_persistent_conf),
-                                   NULL );
+    pb_ostream_t stream = pb_ostream_from_buffer( g_page_buff, sizeof(g_page_buff) );
+
+    err_code = _pb_write_to_flash( &stream );
     require_noerr(err_code, exit);
 
     // Swap the active and swap page addresses
