@@ -12,6 +12,7 @@ HEADERS_TO_SEACH=(                                  \
     "${REPO_ROOT}/Common/inc/flash_memory_map.h"    \
     "${REPO_ROOT}/Common/inc/lan.h"                 \
     "${REPO_ROOT}/Common/inc/dfu_messages.h"        \
+    "${REPO_ROOT}/Src/MQTT/app_mqtt.h"              \
 )
 
 function cat_headers()

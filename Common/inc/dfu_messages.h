@@ -51,7 +51,7 @@
  * names in the Python code.
  */
 
-#define DFU_SERVER_PORT     ( 6900 )
+#define DFU_SERVER_PORT         ( 6900 )
 
 #define DFU_MSG_TYPE_REQ        ( 0x00 )
 #define DFU_MSG_TYPE_READY      ( 0x01 )
@@ -85,7 +85,7 @@ typedef struct __attribute__((packed))
     DFU_MsgType_t msg_type;
     uint32_t      img_crc;
     uint32_t      img_num_chunks;
-    uint8_t       update_provisioning_data; // 0 or 1
+    uint8_t       update_config_data;   // 0 or 1
 } DFU_MetadataMsg_t;
 
 typedef struct __attribute__((packed))

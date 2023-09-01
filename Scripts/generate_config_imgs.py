@@ -10,6 +10,7 @@ from header_constants import (
     NUM_FALLBACK_SERVERS,
     MAX_HOSTNAME_CHARS
 )
+from Calc_CRC32 import calc_crc32
 
 THIS_DIR      = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT_DIR = os.path.dirname(THIS_DIR)
@@ -68,20 +69,6 @@ class FlashConfig(LittleEndianStructure):
 
         ("crc32",                   c_uint32)
     ]
-
-# in case we want this in the future
-def crc32(data: bytes) -> int:
-    crc = 0xFFFFFFFF
-    for byte in data:
-        crc ^= byte
-
-        for _ in range(8):
-            if crc & 1:
-                crc = (crc >> 1) ^ 0xEDB88320
-            else:
-                crc = (crc >> 1) ^ 0
-
-    return crc ^ 0xFFFFFFFF
 
 def generate_anchor_config(anchor_id: int):
     #########################################################################
@@ -169,7 +156,7 @@ def generate_anchor_config(anchor_id: int):
     flash_config_bytes = bytes(flash_config)[:-4]
 
     # Calculate the CRC32 of the struct
-    flash_config.crc32 = crc32(flash_config_bytes)
+    flash_config.crc32 = calc_crc32(flash_config_bytes)
 
     # Bytes to write to flash
     provisioning_bytes = bytes(flash_config)

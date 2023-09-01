@@ -15,10 +15,12 @@ endif
 ifeq ($(HOST_OS),Windows)
 	EM_BUILD := 'C:\Program Files\SEGGER\SEGGER Embedded Studio for ARM 5.68\bin\emBuild.exe'
 	SIZE     := 'C:\Program Files\SEGGER\SEGGER Embedded Studio for ARM 5.68\gcc\arm-none-eabi\bin\arm-none-eabi-size'
+	OBJCOPY  := 'C:\Program Files\SEGGER\SEGGER Embedded Studio for ARM 5.68\gcc\arm-none-eabi\bin\objcopy'
 	RMDIR    := del /f /s /q
 else
 	EM_BUILD := /Applications/SEGGER\ Embedded\ Studio\ for\ ARM\ 5.68/bin/emBuild
 	SIZE     := /Applications/SEGGER\ Embedded\ Studio\ for\ ARM\ 5.68/gcc/arm-none-eabi/bin/arm-none-eabi-size
+	OBJCOPY  := /Applications/SEGGER\ Embedded\ Studio\ for\ ARM\ 5.68/gcc/arm-none-eabi/bin/objcopy
 	RMDIR    := rm -rf
 endif
 
@@ -31,6 +33,7 @@ DWM3001CDK_BUILD_DIR := $(DWM3001CDK_PROJ_DIR)/Output
 TARGET_BIN_DIR := $(DWM3001CDK_BUILD_DIR)/Common/Exe
 TARGET_HEX     := $(TARGET_BIN_DIR)/DWM3001CDK-QANI-FreeRTOS_full.hex
 TARGET_ELF     := $(TARGET_BIN_DIR)/DWM3001CDK-QANI-FreeRTOS.elf
+TARGET_BIN     := $(TARGET_BIN_DIR)/DWM3001CDK-QANI-FreeRTOS.bin
 
 SOFTDEVICE_HEX = ./SDK_BSP/Nordic/NORDIC_SDK_17_1_0/components/softdevice/s113/hex/s113_nrf52_7.2.0_softdevice.hex
 
@@ -50,6 +53,7 @@ endif
 all:
 	@$(EM_BUILD) -echo -config "Common" $(DWM3001CDK_PROJ_XML) 2>&1
 	@$(SIZE) $(TARGET_ELF)
+	@$(OBJCOPY) -O binary $(TARGET_ELF) $(TARGET_BIN)
 	$(call get_constants_from_headers)
 
 .PHONY: clean

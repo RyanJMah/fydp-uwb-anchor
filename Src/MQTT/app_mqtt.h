@@ -15,6 +15,7 @@
 #define CONN_RESP_TOPIC_FMT         "gl/anchor/%u/conn/resp"
 #define NI_CONFIG_TOPIC_FMT         "gl/anchor/%u/conn/ni_config"
 #define BASE_SELF_CONFIG_TOPIC_FMT  "gl/anchor/%u/config"
+#define DFU_TOPIC_FMT               "gl/anchor/%u/dfu"
 
 /*************************************************************
  * GLOBAL VARIABLES
