@@ -7,6 +7,11 @@
 /*************************************************************
  * TYPE DEFINITIONS
  ************************************************************/
+#define MQTT_CLIENT_IDENTIFIER_FMT      "GuidingLite_Anchor_%u"
+
+/*************************************************************
+ * TYPE DEFINITIONS
+ ************************************************************/
 
 // Same as MQTTStatus_t but with some more fields
 typedef enum

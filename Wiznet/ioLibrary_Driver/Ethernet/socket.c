@@ -59,7 +59,6 @@
 #include "cmsis_os.h"
 #endif
 
-// #include "anchor_config.h"
 #include "flash_config_data.h"
 #include "socket.h"
 

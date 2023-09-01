@@ -49,8 +49,6 @@
  *
  */
 
-#include "anchor_config.h"
-
 const char BoardName_Fmt[]    = "GL_Anchor_%u";
 
 char BoardName[sizeof(BoardName_Fmt) + 10] = {0};

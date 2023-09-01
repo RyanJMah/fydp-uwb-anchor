@@ -37,7 +37,7 @@ SOFTDEVICE_HEX = ./SDK_BSP/Nordic/NORDIC_SDK_17_1_0/components/softdevice/s113/h
 CONFIG_BIN_DIR := ./Config_Images
 
 define get_constants_from_headers
-	@./Scripts/get_constants_from_headers.sh > /dev/null
+	@./Scripts/get_constants_from_headers.sh > /dev/null 2>&1
 endef
 
 # fuck windows

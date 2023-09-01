@@ -3,8 +3,8 @@
 #include "macros.h"
 #include "cmsis_os.h"
 #include "core_mqtt.h"
-#include "anchor_config.h"
 #include "mqtt_client.h"
+#include "flash_config_data.h"
 
 /*************************************************************
  * MACROS
@@ -33,10 +33,7 @@ static MQTTPubAckInfo_t     g_incoming_publishes[ INCOMING_PUBLISH_BUFF_LEN ];
 
 static MQTTConnectInfo_t    g_connection_info;
 
-const ipv4_addr_t g_broker_addr =
-{
-    .bytes = MQTT_BROKER_ADDR
-};
+static char g_client_id[ sizeof(MQTT_CLIENT_IDENTIFIER_FMT) + 2 ];
 
 /*************************************************************
  * PRIVATE FUNCTIONS
@@ -65,11 +62,13 @@ MqttRetCode_t MqttClient_Init(void)
     // Clear context...
     memset( &g_mqtt_ctx, 0x00, sizeof(g_mqtt_ctx) );
 
+    // TODO: Try all the fallback servers in case of failure.
+
     // Initialize transport interface...
     sock_err_code = TransportInterface_Init( &g_transport,
-                                              g_broker_addr,
-                                              MQTT_BROKER_PORT );
-    require_action( sock_err_code == SOCK_OK, exit, err_code = MQTT_SOCK_INTERNAL_ERR );
+                                              gp_persistent_conf->server_ip_addr[0],
+                                              gp_persistent_conf->server_port[0] );
+    require_action( sock_err_code > 0, exit, err_code = MQTT_SOCK_INTERNAL_ERR );
 
     // Set buffer members.
     g_fixed_buffer.pBuffer = g_buffer;
@@ -101,8 +100,13 @@ MqttRetCode_t MqttClient_Init(void)
     /* The client identifier is used to uniquely identify this MQTT client to
      * the MQTT broker. In a production device the identifier can be something
      * unique, such as a device serial number. */
-    g_connection_info.pClientIdentifier = MQTT_CLIENT_IDENTIFIER;
-    g_connection_info.clientIdentifierLength = (uint16_t)strlen(MQTT_CLIENT_IDENTIFIER);
+    uint16_t client_id_len = snprintf( g_client_id,
+                                       sizeof(g_client_id),
+                                       MQTT_CLIENT_IDENTIFIER_FMT,
+                                       gp_persistent_conf->anchor_id );
+
+    g_connection_info.pClientIdentifier = g_client_id;
+    g_connection_info.clientIdentifierLength = client_id_len;
 
     /* Set MQTT keep-alive period. If the application does not send packets at an interval less than
      * the keep-alive period, the MQTT library will send PINGREQ packets. */

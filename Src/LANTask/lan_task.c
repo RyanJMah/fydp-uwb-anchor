@@ -60,7 +60,7 @@ static void _send_heartbeat(const void* args UNUSED)
     static char _heartbeat_json[]      = "{\"status\": \"online\"}";
     static uint8_t _heartbeat_json_len = sizeof(_heartbeat_json) - 1;
 
-    MqttClient_Publish(HEARTBEAT_TOPIC, _heartbeat_json, _heartbeat_json_len);
+    MqttClient_Publish(g_HEARTBEAT_TOPIC, _heartbeat_json, _heartbeat_json_len);
 }
 
 static ALWAYS_INLINE void _clear_interrupts(void)
@@ -75,8 +75,10 @@ static ALWAYS_INLINE void _clear_interrupts(void)
 
 static ALWAYS_INLINE void _LANTask_Init(void)
 {
-
     GL_LOG("INITIALIZING MQTT AND LAN...\n");
+
+    // Inits topic strings based on anchor id
+    AppMqtt_Init();
 
     // Initializes the W5500
     LAN_Init( interrupt_pin_handler );

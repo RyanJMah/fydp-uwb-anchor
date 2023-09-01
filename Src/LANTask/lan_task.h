@@ -2,7 +2,6 @@
 
 #include <stdint.h>
 #include "cmsis_os.h"
-// #include "anchor_config.h"
 #include "flash_config_data.h"
 
 /*************************************************************

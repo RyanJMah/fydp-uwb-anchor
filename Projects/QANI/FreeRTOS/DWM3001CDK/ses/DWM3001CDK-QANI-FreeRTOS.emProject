@@ -316,6 +316,7 @@
 
       <folder Name="MQTT">
         <file file_name="../../../../../Src/MQTT/mqtt_client.c" />
+        <file file_name="../../../../../Src/MQTT/app_mqtt.c" />
         <file file_name="../../../../../Src/MQTT/transport_interface.c" />
       </folder>
 
