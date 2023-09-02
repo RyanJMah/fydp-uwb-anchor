@@ -255,8 +255,10 @@ void LAN_Init(nrfx_gpiote_evt_handler_t isr_func)
         _static_net_init();
     }
 
-
-    _init_interrupts( isr_func );
+    if ( isr_func != NULL )
+    {
+        _init_interrupts( isr_func );
+    }
 
     _print_net_info();
 

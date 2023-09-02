@@ -81,6 +81,7 @@ class DFU_MetadataMsg(PackedStruct):
         ("msg_type",            c_uint8),
         ("img_crc",             c_uint32),
         ("img_num_chunks",      c_uint32),
+        ("img_num_bytes",       c_uint32),
         ("update_config_data",  c_uint8),
     ]
 
@@ -95,6 +96,7 @@ class DFU_ChunkMsg(PackedStruct):
         ("chunk_num",   c_uint32),
         ("chunk_size",  c_uint32),
         ("chunk_data",  c_uint8 * DFU_CHUNK_SIZE),
+        ("chunk_crc32", c_uint32)
     ]
 
 class DFU_OkMsg(PackedStruct):
@@ -171,6 +173,7 @@ def cli(anchor_id: int, img_path: str, update_config: bool, skip_req: bool) -> N
         metadata_msg = DFU_MetadataMsg( msg_type = DFU_MSG_TYPE_METADATA,
                                         img_crc = img_crc,
                                         img_num_chunks = img_num_chunks,
+                                        img_num_bytes = len(img_bytes),
                                         update_config_data = update_config )
         conn.sendall( bytes(metadata_msg) )
         ############################################################################
@@ -194,7 +197,11 @@ def cli(anchor_id: int, img_path: str, update_config: bool, skip_req: bool) -> N
             chunk_msg = DFU_ChunkMsg( msg_type = DFU_MSG_TYPE_CHUNK,
                                       chunk_num = i,
                                       chunk_size = chunk_size,
-                                      chunk_data = uint8_arr )
+                                      chunk_data = uint8_arr,
+                                      chunk_crc32 = 0 )
+
+            chunk_msg.chunk_crc32 = calc_crc32( bytes(chunk_msg)[:-4] )
+
             conn.sendall( bytes(chunk_msg) )
 
             ###########################################################

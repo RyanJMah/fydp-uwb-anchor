@@ -65,6 +65,8 @@
 
 #define DFU_CHUNK_SIZE          ( FLASH_PAGE_SIZE )
 
+#define DFU_MAX_NUM_RETRIES     ( 10 )
+
 /*************************************************************
  * TYPE DEFINITIONS
  ************************************************************/
@@ -85,6 +87,7 @@ typedef struct __attribute__((packed))
     DFU_MsgType_t msg_type;
     uint32_t      img_crc;
     uint32_t      img_num_chunks;
+    uint32_t      img_num_bytes;
     uint8_t       update_config_data;   // 0 or 1
 } DFU_MetadataMsg_t;
 
@@ -99,6 +102,7 @@ typedef struct __attribute__((packed))
     uint32_t      chunk_num;
     uint32_t      chunk_num_bytes;
     uint8_t       chunk_data[ DFU_CHUNK_SIZE ];
+    uint32_t      chunk_crc32;
 } DFU_ChunkMsg_t;
 
 typedef struct __attribute__((packed))

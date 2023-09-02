@@ -33,6 +33,7 @@ DFU_MSG_TYPE_INVALID = ( 0x07 )
 def DFU_MSG_IS_VALID(msg): return ( (msg) < DFU_MSG_TYPE_INVALID )
 
 DFU_CHUNK_SIZE = ( FLASH_PAGE_SIZE )
+DFU_MAX_NUM_RETRIES = ( 10 )
 HEARTBEAT_TOPIC_FMT = "gl/anchor/%u/heartbeat"
 DATA_TOPIC_FMT = "gl/anchor/%u/data"
 CONN_REQ_TOPIC_FMT = "gl/anchor/%u/conn/req"
