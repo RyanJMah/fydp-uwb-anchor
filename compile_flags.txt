@@ -57,6 +57,7 @@
 -I./SDK_BSP/Nordic/NORDIC_SDK_17_1_0/components/ble/nrf_ble_gatt
 -I./SDK_BSP/Nordic/NORDIC_SDK_17_1_0/components/ble/nrf_ble_qwr
 -I./SDK_BSP/Nordic/NORDIC_SDK_17_1_0/components/ble/peer_manager
+-I./SDK_BSP/Nordic/NORDIC_SDK_17_1_0/components/libraries/bootloader
 -I./Src/UWB
 -I./Src/UWB/dw
 -I./Src/UWB/FreeRTOS
@@ -185,3 +186,8 @@
 -I./SDK_BSP/Nordic/NORDIC_SDK_17_1_0/external/freertos/portable/GCC/nrf52
 -I./SDK_BSP/Nordic/NORDIC_SDK_17_1_0/external/freertos/portable/CMSIS/nrf52
 -I./Projects/QANI/FreeRTOS/DWM3001CDK/ProjectDefinition
+-DAPP_TIMER_V2
+-DAPP_TIMER_V2_RTC1_ENABLED
+-DCONFIG_GPIO_AS_PINRESET
+-DFLOAT_ABI_HARD
+-DNRF52833_XXAA
