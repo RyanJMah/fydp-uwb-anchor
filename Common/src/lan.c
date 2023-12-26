@@ -164,9 +164,16 @@ static ALWAYS_INLINE void _static_net_init(void)
             gp_persistent_conf->static_ip_addr.bytes,
             sizeof(g_net_info.ip) );
 
-    memcpy( g_net_info.gw,
-            gp_persistent_conf->static_gateway.bytes,
-            sizeof(g_net_info.gw) );
+    if ( IPAddr_IsInvalid(gp_persistent_conf->static_gateway) )
+    {
+        memset( g_net_info.gw, 0, sizeof(g_net_info.gw) );
+    }
+    else
+    {
+        memcpy( g_net_info.gw,
+                gp_persistent_conf->static_gateway.bytes,
+                sizeof(g_net_info.gw) );
+    }
 
     memcpy( g_net_info.sn,
             gp_persistent_conf->static_netmask.bytes,
@@ -179,7 +186,14 @@ static ALWAYS_INLINE void _dhcp_net_init(void)
 {
     GL_LOG("Getting IP via DHCP...\n");
 
+    // Initialize mac address and gateway address
+    memset( &g_net_info, 0, sizeof(g_net_info) );
+    memcpy( g_net_info.mac, gp_persistent_conf->mac_addr, sizeof(g_net_info.mac) );
+    ctlnetwork(CN_SET_NETINFO, (void*)&g_net_info);
+
     DHCP_init( DHCP_SOCK_NUM, g_dhcp_buf );
+
+    GL_LOG("DHCP INITIALIZED\n");
 
     int8_t ret_code;
 

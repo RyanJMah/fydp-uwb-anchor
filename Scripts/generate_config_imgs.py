@@ -1,7 +1,9 @@
 import os
 import sys
+import commentjson as json
 from ctypes import LittleEndianStructure, c_uint32, c_uint8, c_char
 from intelhex import bin2hex
+from typing import List
 
 from header_constants import (
     FLASH_PAGE_SIZE,
@@ -70,57 +72,47 @@ class FlashConfig(LittleEndianStructure):
         ("crc32",                   c_uint32)
     ]
 
+
+def _pad_empty_fallback_servers(l: List[bytes], padding_bytes: bytes):
+    while len(l) < NUM_FALLBACK_SERVERS:
+        l.append(padding_bytes)
+
+
+
 def generate_anchor_config(anchor_id: int):
     #########################################################################
-    swap_count = 0
+    # Import common config from json file
+    common_json_path = os.path.join(BIN_DIR, "common_config.jsonc")
 
-    fw_update_pending = 0
+    with open(common_json_path, "r") as f:
+        json_conf = json.load(f)
 
-    socket_recv_timeout_ms = 5000
+    swap_count = json_conf["swap_count"]
 
-    mac_addr = [0x00, 0x08, 0xdc, 0x00, 0xab, anchor_id]
-    using_dhcp = 1
+    fw_update_pending = json_conf["fw_update_pending"]
 
-    static_ip_addr = [192, 168, 8, 3 + anchor_id]
-    static_netmask = [255, 255, 255, 0]
-    static_gateway = [192, 168, 8, 1]
+    socket_recv_timeout_ms = json_conf["socket_recv_timeout_ms"]
 
-    server_hostname = [
-        b"GuidingLight._mqtt._tcp.local.",
-        bytes([0xFF] * 128),
-        bytes([0xFF] * 128),
-        bytes([0xFF] * 128),
-        bytes([0xFF] * 128),
-        bytes([0xFF] * 128),
-        bytes([0xFF] * 128),
-        bytes([0xFF] * 128),
-        bytes([0xFF] * 128),
-        bytes([0xFF] * 128)
-    ]
-    server_ip_addr = [
-        [192, 168, 8, 2],
-        [0xFF, 0xFF, 0xFF, 0xFF],
-        [0xFF, 0xFF, 0xFF, 0xFF],
-        [0xFF, 0xFF, 0xFF, 0xFF],
-        [0xFF, 0xFF, 0xFF, 0xFF],
-        [0xFF, 0xFF, 0xFF, 0xFF],
-        [0xFF, 0xFF, 0xFF, 0xFF],
-        [0xFF, 0xFF, 0xFF, 0xFF],
-        [0xFF, 0xFF, 0xFF, 0xFF],
-        [0xFF, 0xFF, 0xFF, 0xFF]
-    ]
-    server_port = [
-        1883,
-        0xFFFFFFFF,
-        0xFFFFFFFF,
-        0xFFFFFFFF,
-        0xFFFFFFFF,
-        0xFFFFFFFF,
-        0xFFFFFFFF,
-        0xFFFFFFFF,
-        0xFFFFFFFF,
-        0xFFFFFFFF
-    ]
+    mac_addr      = json_conf["mac_addr_base"]
+    mac_addr[-1] += anchor_id
+
+    using_dhcp = json_conf["using_dhcp"]
+
+    static_ip_addr      = json_conf["static_ip_addr_base"]
+    static_ip_addr[-1] += anchor_id
+
+    static_netmask = json_conf["static_netmask"]
+    static_gateway = json_conf["static_gateway"]
+
+
+    server_hostname = [ s.encode() for s in json_conf["server_hostname"] ]
+    _pad_empty_fallback_servers( server_hostname, bytes([0xFF] * 128) )
+
+    server_ip_addr = json_conf["server_ip_addr"]
+    _pad_empty_fallback_servers( server_ip_addr, bytes([0xFF] * 4) )
+
+    server_port = json_conf["server_port"]
+    _pad_empty_fallback_servers( server_port, 0xFFFFFFFF )
 
     #########################################################################
 

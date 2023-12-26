@@ -79,7 +79,7 @@ retry_fw_update:
             continue;
         }
 
-        sock_err_code = LAN_Connect(DFU_SOCK_NUM, gp_persistent_conf->server_ip_addr[0], 6900);
+        sock_err_code = LAN_Connect(DFU_SOCK_NUM, gp_persistent_conf->server_ip_addr[i], 6900);
 
         if ( sock_err_code > 0 )
         {

@@ -6,13 +6,10 @@
 
 2. Download the [nRF CLI Tools](https://www.nordicsemi.com/Products/Development-tools/nrf-command-line-tools/download)
 
-3. Download protobuf compiler
+3. Install script prerequisites
 
 ```bash
-# Debian-based linux
-sudo apt install protobuf-compiler
-# Macos
-brew install protobuf
+python3 -m pip install -r ./Scripts/requirements.txt
 ```
 
 ### Build
