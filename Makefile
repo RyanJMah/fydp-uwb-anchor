@@ -48,6 +48,10 @@ ifeq ($(HOST_OS),Windows)
 	DWM3001CDK_BUILD_DIR := .\\Projects\\QANI\\FreeRTOS\\DWM3001CDK\\ses\\Output
 endif
 
+define reset_mcu
+	$(NRFJPROG) --reset
+endef
+
 ################################################################################################
 .PHONY: all
 all:
@@ -60,10 +64,14 @@ all:
 clean:
 	$(RMDIR) $(DWM3001CDK_BUILD_DIR)
 
-.PHONY: flash
-flash: all
+.PHONY: __flash
+__flash: all
 	$(NRFJPROG) --program $(TARGET_HEX) --sectorerase --verify
-	$(NRFJPROG) --reset
+
+.PHONY: flash
+flash: __flash
+	$(call reset_mcu)
+
 ################################################################################################
 
 ################################################################################################
@@ -76,9 +84,14 @@ bl:
 clean_bl:
 	cd ./Bootloader && make clean
 
-.PHONY: flash_bl
-flash_bl:
+.PHONY: __flash_bl
+__flash_bl:
 	cd ./Bootloader && make flash
+
+.PHONY: flash_bl
+flash_bl: __flash_bl
+	$(call reset_mcu)
+
 ################################################################################################
 
 ################################################################################################
@@ -91,13 +104,17 @@ config_imgs: $(CONFIG_BIN_DIR)
 
 .PHONY: clean_config_imgs
 clean_config_imgs:
-	$(RMDIR) $(CONFIG_BIN_DIR)
+	rm -f $(CONFIG_BIN_DIR)/*.bin
 
-.PHONY: flash_config_img
-flash_config_img: config_imgs
+.PHONY: __flash_config_img
+__flash_config_img: config_imgs
 	$(call check_defined, ANCHOR_ID, which anchod id to flash?)
 	$(NRFJPROG) --program $(CONFIG_BIN_DIR)/a$(ANCHOR_ID).hex --sectorerase --verify
-	$(NRFJPROG) --reset
+
+.PHONY: flash_config_img
+flash_config_img: __flash_config_img
+	$(call reset_mcu)
+
 ################################################################################################
 
 ################################################################################################
@@ -108,7 +125,9 @@ everything: all bl config_imgs
 clean_everything: clean clean_bl clean_config_imgs
 
 .PHONY: flash_everything
-flash_everything: flash_erase flash flash_bl flash_config_img
+flash_everything: flash_erase __flash __flash_bl __flash_config_img
+	$(call reset_mcu)
+
 ################################################################################################
 
 ################################################################################################

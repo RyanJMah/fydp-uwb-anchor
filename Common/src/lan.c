@@ -300,7 +300,7 @@ int16_t LAN_Connect(sock_t sock, ipv4_addr_t addr, uint16_t port)
             addr.bytes[3] );
 
     err_code = connect(sock, addr.bytes, port);
-    require( err_code > 0, exit );
+    require_action( err_code > 0, exit, GL_LOG("sock_err_code = %d\n", err_code) );
 
 exit:
     #if NEEDS_MUTEX
