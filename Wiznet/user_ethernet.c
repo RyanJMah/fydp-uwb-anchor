@@ -72,7 +72,7 @@ void user_ethernet_init(void)
 	wiz_NetTimeout timeout_info =
     {
         .retry_cnt = 5,
-        .time_100us = 50000,	// timeout value = 500ms
+        .time_100us = 1000,	// timeout value = 10ms
     };
     wizchip_settimeout(&timeout_info);
 }

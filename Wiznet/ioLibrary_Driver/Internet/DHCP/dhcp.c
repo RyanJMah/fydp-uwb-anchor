@@ -415,6 +415,8 @@ void send_DHCP_DISCOVER(void)
         GL_LOG("ERROR: sendto() failed with status %d\r\n", status);
         GL_FATAL_ERROR();
     }
+    
+    GL_LOG("sendto ret code = %d\n", status);
 }
 
 /* SEND DHCP REQUEST */
@@ -689,7 +691,14 @@ uint8_t DHCP_run(void)
 	if(dhcp_state == STATE_DHCP_STOP) return DHCP_STOPPED;
 
 	if(getSn_SR(DHCP_SOCKET) != SOCK_UDP)
-	   socket(DHCP_SOCKET, Sn_MR_UDP, DHCP_CLIENT_PORT, 0x00);
+    {
+        GL_LOG("creating DHCP UDP socket\n");
+	    if ( socket(DHCP_SOCKET, Sn_MR_UDP, DHCP_CLIENT_PORT, 0x00) != DHCP_SOCKET )
+        {
+            GL_LOG("ERROR: DHCP socket() failed\r\n");
+            GL_FATAL_ERROR();
+        }
+    }
 
 	ret = DHCP_RUNNING;
 	type = parseDHCPMSG();

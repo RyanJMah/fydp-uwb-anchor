@@ -186,11 +186,14 @@ static ALWAYS_INLINE void _dhcp_net_init(void)
 {
     GL_LOG("Getting IP via DHCP...\n");
 
-    // Initialize mac address and gateway address
+    // Initialize mac address from flash
     memset( &g_net_info, 0, sizeof(g_net_info) );
     memcpy( g_net_info.mac, gp_persistent_conf->mac_addr, sizeof(g_net_info.mac) );
+
+    // Commit changes
     ctlnetwork(CN_SET_NETINFO, (void*)&g_net_info);
 
+    // Initialize DHCP
     DHCP_init( DHCP_SOCK_NUM, g_dhcp_buf );
 
     GL_LOG("DHCP INITIALIZED\n");
@@ -262,6 +265,7 @@ void LAN_Init(nrfx_gpiote_evt_handler_t isr_func)
 
     if ( gp_persistent_conf->using_dhcp )
     {
+        nrf_delay_ms(5000);
         _dhcp_net_init();
     }
     else
