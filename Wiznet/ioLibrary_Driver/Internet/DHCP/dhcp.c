@@ -49,6 +49,7 @@
 //
 //*****************************************************************************
 
+#include "gl_error.h"
 #define _DHCP_DEBUG_
 
 #include "gl_log.h"
@@ -412,7 +413,7 @@ void send_DHCP_DISCOVER(void)
     if (status < 0)
     {
         GL_LOG("ERROR: sendto() failed with status %d\r\n", status);
-        NVIC_SystemReset();
+        GL_FATAL_ERROR();
     }
 }
 

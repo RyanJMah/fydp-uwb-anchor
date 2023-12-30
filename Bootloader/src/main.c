@@ -1,3 +1,4 @@
+#include "gl_error.h"
 #include "nrf_delay.h"
 #include "nrf_sdm.h"
 #include "nrf_bootloader_info.h"
@@ -237,10 +238,7 @@ retry_fw_update:
 
 err_handler:
     GL_LOG("DFU FATAL ERROR: err_code=%d, sock_err_code=%d\n", err_code, sock_err_code);
-
-    // Try again after a little
-    nrf_delay_ms(2000);
-    NVIC_SystemReset();
+    GL_FATAL_ERROR();
 
     return 0;
 }

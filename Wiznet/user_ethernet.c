@@ -1,4 +1,5 @@
 #include "user_ethernet.h"
+#include "gl_error.h"
 #include "user_spi.h"
 #include "socket.h"
 #include <stdio.h>
@@ -41,8 +42,7 @@ void wizchip_write(uint8_t wb)
 void user_ethernet_init(void)
 {
     uint8_t tmp;
-	  uint8_t memsize[2][8] = {{2,2,2,2,2,2,2,2},{2,2,2,2,2,2,2,2}};
-		wiz_NetTimeout timeout_info;
+	uint8_t memsize[2][8] = {{2,2,2,2,2,2,2,2},{2,2,2,2,2,2,2,2}};
 
     reg_wizchip_cs_cbfunc(wizchip_select, wizchip_deselect);
     reg_wizchip_spi_cbfunc(wizchip_read, wizchip_write);
@@ -54,19 +54,25 @@ void user_ethernet_init(void)
     if(ctlwizchip(CW_INIT_WIZCHIP,(void*)memsize) == -1)
     {
     	GL_LOG("WIZCHIP Initialized fail.\r\n");
-       while(1);
+        GL_FATAL_ERROR();
     }
 
     /* PHY link status check */
     GL_LOG("W5500 PHY Link Status Check\r\n");
     do
     {
-       if(ctlwizchip(CW_GET_PHYLINK, (void*)&tmp) == -1)
-    	   GL_LOG("Unknown PHY Link stauts.\r\n");
-    }while(tmp == PHY_LINK_OFF);
+        if(ctlwizchip(CW_GET_PHYLINK, (void*)&tmp) == -1)
+        {
+            GL_LOG("Unknown PHY Link stauts.\r\n");
+        }
+    }
+    while(tmp == PHY_LINK_OFF);
 
-    timeout_info.retry_cnt = 1;
-    timeout_info.time_100us = 0x3E8;	// timeout value = 10ms
 
+	wiz_NetTimeout timeout_info =
+    {
+        .retry_cnt = 5,
+        .time_100us = 50000,	// timeout value = 500ms
+    };
     wizchip_settimeout(&timeout_info);
 }

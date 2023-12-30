@@ -1,6 +1,7 @@
 #include "cmsis_os.h"
 #include "flash_config_data.h"
 #include "fira_helper.h"
+#include "gl_error.h"
 #include "macros.h"
 #include "gl_log.h"
 #include "custom_board.h"
@@ -73,7 +74,7 @@ static ALWAYS_INLINE void _clear_interrupts(void)
     }
 }
 
-static ALWAYS_INLINE void _LANTask_Init(void)
+static ALWAYS_INLINE void _init_mqtt(void)
 {
     GL_LOG("INITIALIZING MQTT AND LAN...\n");
 
@@ -89,7 +90,7 @@ static ALWAYS_INLINE void _LANTask_Init(void)
     if ( err_code != MQTT_OK )
     {
         GL_LOG("FAILED TO CONNECT TO BROKER, err_code=%d\n", err_code);
-        NVIC_SystemReset();
+        GL_FATAL_ERROR();
     }
 
     // Create and start the heartbeat timer...
@@ -103,7 +104,7 @@ static void _LANTask_Main(void const* args UNUSED)
 {
     MqttRetCode_t err_code;
 
-    _LANTask_Init();
+    _init_mqtt();
 
     while (1)
     {
@@ -120,7 +121,7 @@ static void _LANTask_Main(void const* args UNUSED)
             case MQTT_SOCK_INTERNAL_ERR:
             {
                 GL_LOG("ManageRunLoop failed: err_code=%d\n", err_code);
-                NVIC_SystemReset();
+                GL_FATAL_ERROR();
             }
 
             default:
