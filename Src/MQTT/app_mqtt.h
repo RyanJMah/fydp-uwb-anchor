@@ -38,6 +38,9 @@ extern uint8_t g_NI_CONFIG_TOPIC_LEN;
 extern char    g_BASE_SELF_CONFIG_TOPIC[];
 extern uint8_t g_BASE_SELF_CONFIG_TOPIC_LEN;
 
+extern char    g_DFU_TOPIC[];
+extern uint8_t g_DFU_TOPIC_LEN;
+
 /*************************************************************
 * TYPE DEFINITIONS
 ************************************************************/

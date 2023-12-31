@@ -1,4 +1,5 @@
 #include <string.h>
+#include "core_mqtt_serializer.h"
 #include "gl_log.h"
 #include "macros.h"
 #include "cmsis_os.h"
@@ -10,6 +11,8 @@
  * MACROS
  ************************************************************/
 #define MQTT_CLIENT_BUFF_SIZE       ( 1024*5 )
+
+#define MQTT_MAX_SUBSCRIBTIONS      ( 10 )
 
 #define OUTGOING_PUBLISH_BUFF_LEN   ( 10 )
 #define INCOMING_PUBLISH_BUFF_LEN   ( 10 )
@@ -31,6 +34,9 @@ static uint8_t              g_buffer[ MQTT_CLIENT_BUFF_SIZE ];
 static MQTTPubAckInfo_t     g_outgoing_publishes[ OUTGOING_PUBLISH_BUFF_LEN ];
 static MQTTPubAckInfo_t     g_incoming_publishes[ INCOMING_PUBLISH_BUFF_LEN ];
 
+// static MqttClient_SubscribeCallback_t g_sub_cb = NULL;
+static MQTTSubscribeInfo_t            g_sub_list[ MQTT_MAX_SUBSCRIBTIONS ];
+
 static MQTTConnectInfo_t    g_connection_info;
 
 static char g_client_id[ sizeof(MQTT_CLIENT_IDENTIFIER_FMT) + 2 ];
@@ -48,7 +54,23 @@ static void eventCallback( MQTTContext_t * pContext,
                            MQTTPacketInfo_t * pPacketInfo,
                            MQTTDeserializedInfo_t * pDeserializedInfo )
 {
+    if (pPacketInfo->type == MQTT_PACKET_TYPE_PUBLISH)
+    {
+        MQTTPublishInfo_t *pPublishInfo = pDeserializedInfo->pPublishInfo;
 
+        // if (g_sub_cb != NULL)
+        // {
+        //     g_sub_cb( (char* )pPublishInfo->pTopicName, pPublishInfo->topicNameLength,
+        //               (uint8_t* )pPublishInfo->pPayload, pPublishInfo->payloadLength );
+        // }
+        for (uint32_t i = 0; i < pPublishInfo->payloadLength; i++)
+        {
+            GL_LOG("%c", ((char*)pPublishInfo->pPayload)[i]);
+        }
+        GL_LOG("Received message on topic %.*s: %.*s\n",
+               (int)pPublishInfo->topicNameLength, pPublishInfo->pTopicName,
+               (int)pPublishInfo->payloadLength, (char*)pPublishInfo->pPayload);
+    }
 }
 
 /*************************************************************
@@ -89,7 +111,7 @@ MqttRetCode_t MqttClient_Init(void)
     require_noerr(err_code, exit);
 
     // Clear connection info struct...
-   memset( &g_connection_info, 0, sizeof(g_connection_info) ); 
+    memset( &g_connection_info, 0, sizeof(g_connection_info) ); 
 
     /* Start with a clean session i.e. direct the MQTT broker to discard any
      * previous session data. Also, establishing a connection with clean session
@@ -144,4 +166,24 @@ MqttRetCode_t MqttClient_Publish(char* topic, void* data, uint32_t len)
     uint16_t pkt_id = MQTT_GetPacketId(&g_mqtt_ctx);
 
     return MQTT_Publish(&g_mqtt_ctx, &publish_info, pkt_id);
+}
+
+MqttRetCode_t MqttClient_Subscribe(char* topic, uint32_t topic_len)
+{
+    static uint32_t curr_sub_indx = 0;
+
+    g_sub_list[curr_sub_indx].pTopicFilter      = topic;
+    g_sub_list[curr_sub_indx].topicFilterLength = topic_len;
+    g_sub_list[curr_sub_indx].qos               = MQTTQoS0;
+
+    uint16_t pkt_id = MQTT_GetPacketId( &g_mqtt_ctx );
+
+    MqttRetCode_t ret = MQTT_Subscribe( &g_mqtt_ctx,
+                                        &g_sub_list[curr_sub_indx],
+                                        1,
+                                        pkt_id );
+
+    curr_sub_indx = (curr_sub_indx + 1) % MQTT_MAX_SUBSCRIBTIONS;
+
+    return ret;
 }

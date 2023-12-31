@@ -20,6 +20,10 @@ uint8_t g_NI_CONFIG_TOPIC_LEN;
 char    g_BASE_SELF_CONFIG_TOPIC[ sizeof(BASE_SELF_CONFIG_TOPIC_FMT) + 2 ];
 uint8_t g_BASE_SELF_CONFIG_TOPIC_LEN;
 
+char    g_DFU_TOPIC[ sizeof(DFU_TOPIC_FMT) + 2 ];
+uint8_t g_DFU_TOPIC_LEN;
+
+
 void AppMqtt_Init(void)
 {
     g_HEARTBEAT_TOPIC_LEN = snprintf( g_HEARTBEAT_TOPIC,
@@ -51,4 +55,9 @@ void AppMqtt_Init(void)
                                              sizeof(g_BASE_SELF_CONFIG_TOPIC),
                                              BASE_SELF_CONFIG_TOPIC_FMT,
                                              gp_persistent_conf->anchor_id );
+
+    g_DFU_TOPIC_LEN = snprintf( g_DFU_TOPIC,
+                                sizeof(g_DFU_TOPIC),
+                                DFU_TOPIC_FMT,
+                                gp_persistent_conf->anchor_id );
 }

@@ -77,7 +77,6 @@ static ALWAYS_INLINE void _clear_interrupts(void)
 static ALWAYS_INLINE void _init_mqtt(void)
 {
     GL_LOG("INITIALIZING MQTT AND LAN...\n");
-    GL_LOG("ADDING THIS LOG TO SEE IF APP CODE CHANGES\n");
 
     // Inits topic strings based on anchor id
     AppMqtt_Init();
@@ -86,13 +85,18 @@ static ALWAYS_INLINE void _init_mqtt(void)
     LAN_Init( interrupt_pin_handler );
 
     // Initialize MQTT
-    MqttRetCode_t err_code = MqttClient_Init();
+    MqttRetCode_t err_code;
+    
+    err_code = MqttClient_Init();
 
     if ( err_code != MQTT_OK )
     {
         GL_LOG("FAILED TO CONNECT TO BROKER, err_code=%d\n", err_code);
         GL_FATAL_ERROR();
     }
+
+    // Sub to topics
+    err_code = MqttClient_Subscribe(g_DFU_TOPIC, g_DFU_TOPIC_LEN);
 
     // Create and start the heartbeat timer...
     g_heartbeat_timer_id = osTimerCreate( osTimer(g_heartbeat_timer),
