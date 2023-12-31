@@ -5,8 +5,8 @@
 
     "socket_recv_timeout_ms": 5000,
 
-    // JSON doesn't allow hex literals: 40:BD:32:BE:FD:9F
-    "mac_addr_base": [64, 189, 50, 190, 253, 159],
+    // JSON doesn't allow hex literals: 40:BD:32:BE:FD:00
+    "mac_addr_base": [64, 189, 50, 190, 253, 0],
 
     "using_dhcp": 1,
 

@@ -55,7 +55,7 @@
 
 /* Retry to processing DHCP */
 #define	MAX_DHCP_RETRY          2        ///< Maxium retry count
-#define	DHCP_WAIT_TIME          3       ///< Wait Time 3s
+#define	DHCP_WAIT_TIME          2       ///< Wait Time 3s
 
 
 /* UDP port numbers for DHCP */
@@ -65,7 +65,7 @@
 
 #define MAGIC_COOKIE             0x63825363  ///< Any number. You can be modifyed it any number
 
-#define DCHP_HOST_NAME           "WIZnet\0"
+#define DCHP_HOSTNAME           "GL_Anchor\0"
 
 /* 
  * @brief return value of @ref DHCP_run()

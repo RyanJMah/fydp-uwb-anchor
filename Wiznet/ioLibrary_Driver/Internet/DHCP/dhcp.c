@@ -49,6 +49,7 @@
 //
 //*****************************************************************************
 
+#include "flash_config_data.h"
 #include "gl_error.h"
 #define _DHCP_DEBUG_
 
@@ -214,7 +215,7 @@ uint32_t DHCP_XID;      // Any number
 
 RIP_MSG* pDHCPMSG;      // Buffer pointer for DHCP processing
 
-uint8_t HOST_NAME[] = DCHP_HOST_NAME;  
+uint8_t HOSTNAME[] = DCHP_HOSTNAME;
 
 uint8_t DHCP_CHADDR[6]; // DHCP Client MAC address.
 
@@ -379,8 +380,13 @@ void send_DHCP_DISCOVER(void)
 	// host name
 	pDHCPMSG->OPT[k++] = hostName;
 	pDHCPMSG->OPT[k++] = 0;          // fill zero length of hostname 
-	for(i = 0 ; HOST_NAME[i] != 0; i++)
-   	pDHCPMSG->OPT[k++] = HOST_NAME[i];
+
+
+    for (i = 0; i < sizeof(HOSTNAME); i++)
+    {
+        pDHCPMSG->OPT[k++] = HOSTNAME[i];
+    }
+
 	pDHCPMSG->OPT[k++] = DHCP_CHADDR[3];
 	pDHCPMSG->OPT[k++] = DHCP_CHADDR[4];
 	pDHCPMSG->OPT[k++] = DHCP_CHADDR[5];
@@ -484,8 +490,12 @@ void send_DHCP_REQUEST(void)
 	// host name
 	pDHCPMSG->OPT[k++] = hostName;
 	pDHCPMSG->OPT[k++] = 0; // length of hostname
-	for(i = 0 ; HOST_NAME[i] != 0; i++)
-   	pDHCPMSG->OPT[k++] = HOST_NAME[i];
+
+    for (i = 0; i < sizeof(HOSTNAME); i++)
+    {
+        pDHCPMSG->OPT[k++] = HOSTNAME[i];
+    }
+
 	pDHCPMSG->OPT[k++] = DHCP_CHADDR[3];
 	pDHCPMSG->OPT[k++] = DHCP_CHADDR[4];
 	pDHCPMSG->OPT[k++] = DHCP_CHADDR[5];
