@@ -28,7 +28,7 @@ from Calc_CRC32 import calc_crc32
 
 
 MAX_CHUNK_RETRIES = 10
-CHUNK_RETRY_DELAY = 0.25 # seconds
+CHUNK_RETRY_DELAY = 0 # seconds
 
 # Sequence diagram:
 #
@@ -280,6 +280,8 @@ def cli(anchor: int, img_path: str, update_config: bool, skip_req: bool, broker_
             print("Anchor failed to flash image!")
             sys.exit(1)
         ############################################################################
+
+        print("Done")
 
 if __name__ == "__main__":
     cli()
