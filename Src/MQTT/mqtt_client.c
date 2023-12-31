@@ -34,7 +34,7 @@ static uint8_t              g_buffer[ MQTT_CLIENT_BUFF_SIZE ];
 static MQTTPubAckInfo_t     g_outgoing_publishes[ OUTGOING_PUBLISH_BUFF_LEN ];
 static MQTTPubAckInfo_t     g_incoming_publishes[ INCOMING_PUBLISH_BUFF_LEN ];
 
-// static MqttClient_SubscribeCallback_t g_sub_cb = NULL;
+static MqttClient_SubscribeCallback_t g_sub_cb = NULL;
 static MQTTSubscribeInfo_t            g_sub_list[ MQTT_MAX_SUBSCRIBTIONS ];
 
 static MQTTConnectInfo_t    g_connection_info;
@@ -58,18 +58,19 @@ static void eventCallback( MQTTContext_t * pContext,
     {
         MQTTPublishInfo_t *pPublishInfo = pDeserializedInfo->pPublishInfo;
 
-        // if (g_sub_cb != NULL)
-        // {
-        //     g_sub_cb( (char* )pPublishInfo->pTopicName, pPublishInfo->topicNameLength,
-        //               (uint8_t* )pPublishInfo->pPayload, pPublishInfo->payloadLength );
-        // }
-        for (uint32_t i = 0; i < pPublishInfo->payloadLength; i++)
+        if (g_sub_cb != NULL)
         {
-            GL_LOG("%c", ((char*)pPublishInfo->pPayload)[i]);
+            g_sub_cb( (char* )pPublishInfo->pTopicName, pPublishInfo->topicNameLength,
+                      (uint8_t* )pPublishInfo->pPayload, pPublishInfo->payloadLength );
         }
-        GL_LOG("Received message on topic %.*s: %.*s\n",
-               (int)pPublishInfo->topicNameLength, pPublishInfo->pTopicName,
-               (int)pPublishInfo->payloadLength, (char*)pPublishInfo->pPayload);
+
+        // for (uint32_t i = 0; i < pPublishInfo->payloadLength; i++)
+        // {
+        //     GL_LOG("%c", ((char*)pPublishInfo->pPayload)[i]);
+        // }
+        // GL_LOG("Received message on topic %.*s: %.*s\n",
+        //        (int)pPublishInfo->topicNameLength, pPublishInfo->pTopicName,
+        //        (int)pPublishInfo->payloadLength, (char*)pPublishInfo->pPayload);
     }
 }
 
@@ -186,4 +187,9 @@ MqttRetCode_t MqttClient_Subscribe(char* topic, uint32_t topic_len)
     curr_sub_indx = (curr_sub_indx + 1) % MQTT_MAX_SUBSCRIBTIONS;
 
     return ret;
+}
+
+void MqttClient_RegisterSubscribeCallback(MqttClient_SubscribeCallback_t cb)
+{
+    g_sub_cb = cb;
 }

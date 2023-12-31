@@ -54,4 +54,4 @@ MqttRetCode_t MqttClient_ManageRunLoop(void);
 MqttRetCode_t MqttClient_Publish(char* topic, void* data, uint32_t len);
 MqttRetCode_t MqttClient_Subscribe(char* topic, uint32_t topic_len);
 
-MqttRetCode_t MqttClient_RegisterSubscribeCallback(MqttClient_SubscribeCallback_t cb);
+void MqttClient_RegisterSubscribeCallback(MqttClient_SubscribeCallback_t cb);

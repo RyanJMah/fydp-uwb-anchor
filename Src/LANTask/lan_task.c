@@ -64,6 +64,20 @@ static void _send_heartbeat(const void* args UNUSED)
     MqttClient_Publish(g_HEARTBEAT_TOPIC, _heartbeat_json, _heartbeat_json_len);
 }
 
+static void _subscribe_callback( char* topic, uint32_t topic_len,
+                                 uint8_t* payload, uint32_t payload_len )
+{
+    for (uint32_t i = 0; i < topic_len; i++)
+    {
+        GL_LOG("%c", topic[i]);
+    }
+    
+    for (uint32_t i = 0; i < payload_len; i++)
+    {
+        GL_LOG("%c", payload[i]);
+    }
+}
+
 static ALWAYS_INLINE void _clear_interrupts(void)
 {
     uint8_t sir = getSIR();
@@ -96,6 +110,8 @@ static ALWAYS_INLINE void _init_mqtt(void)
     }
 
     // Sub to topics
+    MqttClient_RegisterSubscribeCallback( _subscribe_callback );
+
     err_code = MqttClient_Subscribe(g_DFU_TOPIC, g_DFU_TOPIC_LEN);
 
     // Create and start the heartbeat timer...
