@@ -1,6 +1,3 @@
 [submodule "coreMQTT"]
 	path = coreMQTT
 	url = https://github.com/FreeRTOS/coreMQTT.git
-[submodule "Scripts/server_code"]
-	path = Scripts/server_code
-	url = https://github.com/RyanJMah/fydp-rtls-server
