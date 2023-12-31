@@ -44,7 +44,9 @@ static uint8_t g_dhcp_buf[DHCP_BUF_SIZE];
 
 static wiz_NetInfo g_net_info;
 
+#ifndef GL_BOOTLOADER
 APP_TIMER_DEF(g_dhcp_timer);
+#endif
 
 #if NEEDS_MUTEX
 static osMutexDef(g_lan_mutex);     // Declare mutex
@@ -186,15 +188,16 @@ static ALWAYS_INLINE void _static_net_init(void)
     ctlnetwork(CN_SET_NETINFO, (void*)&g_net_info);
 }
 
-
+#ifndef GL_BOOTLOADER
 static void _DHCP_Time_Handler(void * p_context)
 {
     DHCP_time_handler();
 }
+#endif
 
 static ALWAYS_INLINE void _dhcp_net_init(void)
 {
-    ret_code_t err_code = NRF_SUCCESS;
+    int8_t ret_code = DHCP_FAILED;
 
     GL_LOG("Getting IP via DHCP...\n");
 
@@ -210,18 +213,19 @@ static ALWAYS_INLINE void _dhcp_net_init(void)
 
     // Initialize timer
 
+#ifndef GL_BOOTLOADER
+    ret_code_t err_code = NRF_SUCCESS;
+
     err_code = app_timer_init();
-    require_noerr(err_code, exit);
+    GL_ERROR_CHECK(err_code);
 
     err_code = app_timer_create(&g_dhcp_timer, APP_TIMER_MODE_REPEATED, _DHCP_Time_Handler);
-    require_noerr(err_code, exit);
+    GL_ERROR_CHECK(err_code);
 
     err_code = app_timer_start(g_dhcp_timer, APP_TIMER_TICKS(1000), NULL);
-    require_noerr(err_code, exit);
+    GL_ERROR_CHECK(err_code);
 
     GL_LOG("DHCP INITIALIZED\n");
-
-    int8_t ret_code;
 
     while (1)
     {
@@ -239,6 +243,27 @@ static ALWAYS_INLINE void _dhcp_net_init(void)
             continue;
         }
     }
+#else
+    // Can't get timers to work in bootloader for some reason, too lazy to debug,
+    // will just use a lazier implementation
+    nrf_delay_ms(5000);
+    while (1)
+    {
+        ret_code = DHCP_run();
+
+        if ( ret_code == DHCP_IP_LEASED )
+        {
+            GL_LOG("DHCP IP ASSIGNED\r\n");
+            break;
+        }
+        else if ( ret_code == DHCP_FAILED )
+        {
+            GL_LOG("DHCP FAILED, retrying in 5 seconds...\r\n");
+            nrf_delay_ms(5000);
+            continue;
+        }
+    }
+#endif
 
     memset( &g_net_info, 0, sizeof(g_net_info) );
 
@@ -261,13 +286,6 @@ static ALWAYS_INLINE void _dhcp_net_init(void)
      * In the bootloader, we are gonna just get our IP address then dip.
      */
     DHCP_stop();
-
-exit:
-    if ( err_code != NRF_SUCCESS )
-    {
-        GL_LOG("FAILED TO INITIALIZE DHCP, err_code=%d\n", err_code);
-        GL_FATAL_ERROR();
-    }
 }
 
 /*************************************************************
