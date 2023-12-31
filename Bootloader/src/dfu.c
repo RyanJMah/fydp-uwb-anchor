@@ -94,6 +94,9 @@ bool DFU_ValidateChunk(DFU_ChunkMsg_t *chunk)
                                                chunk->chunk_num_bytes,
                                                NULL );
 
+    GL_LOG("Calculated CRC32: 0x%08X\n", calculated_crc32);
+    GL_LOG("Received CRC32:   0x%08X\n", chunk->chunk_crc32);
+
     // Compare the CRC32s
     if ( calculated_crc32 != chunk->chunk_crc32 )
     {

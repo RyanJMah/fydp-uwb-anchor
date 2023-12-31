@@ -206,10 +206,11 @@ def cli(anchor_id: int, img_path: str, update_config: bool, skip_req: bool) -> N
                                       chunk_data = uint8_arr,
                                       chunk_crc32 = 0 )
 
-            chunk_msg.chunk_crc32 = calc_crc32( bytes(chunk_msg)[:-4] )
+            chunk_msg.chunk_crc32 = calc_crc32( bytes(chunks[i]) )
 
             conn.sendall( bytes(chunk_msg) )
             print(f"Sent CHUNK {i}, CRC = {chunk_msg.chunk_crc32:08X}")
+            print(f"chunk = {chunks[i]}")
 
             ###########################################################
             # OK MESSAGE
