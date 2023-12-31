@@ -5,6 +5,12 @@
 #include "lan.h"
 #include "flash_memory_map.h"
 
+#ifdef GL_BOOTLOADER
+    #include "nrf_fstorage_nvmc.h"
+#else
+    #include "nrf_fstorage_sd.h"
+#endif
+
 /*************************************************************
  * MACROS
  ************************************************************/
@@ -63,4 +69,7 @@ uint8_t FlashConfigData_Validate(void);
 
 void FlashConfigData_Print(void);
 
+ret_code_t FlashConfigData_ReadBack(void);
 ret_code_t FlashConfigData_WriteBack(void);
+
+nrf_fstorage_t* FlashConfigData_GetFStorage(void);

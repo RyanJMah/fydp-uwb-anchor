@@ -1,3 +1,5 @@
+#include "flash_config_data.h"
+#include "gl_error.h"
 #include "nrf_fstorage.h"
 #include "nrf_fstorage_nvmc.h"
 #include "nrf_bootloader_app_start.h"
@@ -24,6 +26,8 @@ static NRF_FSTORAGE_DEF(nrf_fstorage_t g_app_code_fstorage) =
     .start_addr  = FLASH_APP_START_ADDR,
     .end_addr    = FLASH_APP_END_ADDR + 1
 };
+
+static nrf_fstorage_t* g_fstorage = NULL;
 
 static uint8_t g_is_initialized = 0;
 
@@ -65,7 +69,30 @@ exit:
     return err_code;
 }
 
-ret_code_t DFU_EraseAppCode(void)
+void DFU_SetUpdateType(DFU_UpdateType_t update_type)
+{
+    switch (update_type)
+    {
+        case DFU_UPDATE_TYPE_APP_CODE:
+        {
+            g_fstorage = &g_app_code_fstorage;
+            break;
+        }
+
+        case DFU_UPDATE_TYPE_CONFIG_DATA:
+        {
+            g_fstorage = FlashConfigData_GetFStorage();
+            break;
+        }
+
+        default:
+        {
+            GL_FATAL_ERROR();
+        }
+    }
+}
+
+ret_code_t DFU_EraseCurrentImg(void)
 {
     if ( !g_is_initialized )
     {
@@ -75,7 +102,7 @@ ret_code_t DFU_EraseAppCode(void)
     ret_code_t err_code;
 
     // // Erase all the app code pages
-    err_code = nrf_fstorage_erase(&g_app_code_fstorage, FLASH_APP_START_ADDR, APP_NUM_PAGES, NULL);
+    err_code = nrf_fstorage_erase(g_fstorage, g_fstorage->start_addr, APP_NUM_PAGES, NULL);
     require_noerr(err_code, exit);
 
 exit:
@@ -126,10 +153,8 @@ ret_code_t DFU_ValidateImage(DFU_MetadataMsg_t* p_metadata, bool* out_ok)
     for (uint32_t i = 0; i < p_metadata->img_num_chunks; i++)
     {
         // Read the chunk from flash
-
-
-        err_code = nrf_fstorage_read( &g_app_code_fstorage,
-                                      FLASH_APP_START_ADDR + i*DFU_CHUNK_SIZE,
+        err_code = nrf_fstorage_read( g_fstorage,
+                                      g_fstorage->start_addr + i*DFU_CHUNK_SIZE,
                                       buf,
                                       sizeof(buf) );
         require_noerr(err_code, exit);
@@ -164,7 +189,7 @@ ret_code_t DFU_WriteChunk(DFU_ChunkMsg_t *chunk)
     ret_code_t err_code;
 
     // Calculate the address of the chunk
-    uint32_t chunk_addr = FLASH_APP_START_ADDR + (chunk->chunk_num * DFU_CHUNK_SIZE);
+    uint32_t chunk_addr = g_fstorage->start_addr + (chunk->chunk_num * DFU_CHUNK_SIZE);
 
     // Needs to be aligned to 4 bytes
     uint32_t num_bytes_to_write = chunk->chunk_num_bytes;
@@ -174,7 +199,7 @@ ret_code_t DFU_WriteChunk(DFU_ChunkMsg_t *chunk)
     }
 
     // Write the chunk to flash
-    err_code = nrf_fstorage_write( &g_app_code_fstorage,
+    err_code = nrf_fstorage_write( g_fstorage,
                                    chunk_addr,
                                    write_buff,
                                    num_bytes_to_write,

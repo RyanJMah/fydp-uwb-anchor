@@ -17,6 +17,8 @@ from header_constants import (
     DFU_MSG_TYPE_CONFIRM,
     DFU_MSG_TYPE_INVALID,
     DFU_MSG_IS_VALID,
+    DFU_UPDATE_TYPE_APP_CODE,
+    DFU_UPDATE_TYPE_CONFIG_DATA,
     DFU_CHUNK_SIZE,
     DFU_SERVER_PORT,
     DFU_TOPIC_FMT,
@@ -81,11 +83,11 @@ class DFU_ReadyMsg(PackedStruct):
 
 class DFU_MetadataMsg(PackedStruct):
     _fields_ = [
-        ("msg_type",            c_uint8),
-        ("img_crc",             c_uint32),
-        ("img_num_chunks",      c_uint32),
-        ("img_num_bytes",       c_uint32),
-        ("update_config_data",  c_uint8),
+        ("msg_type",        c_uint8),
+        ("img_crc",         c_uint32),
+        ("img_num_chunks",  c_uint32),
+        ("img_num_bytes",   c_uint32),
+        ("update_type",     c_uint8),
     ]
 
 class DFU_BeginMsg(PackedStruct):
@@ -117,11 +119,11 @@ class DFU_ConfirmMsg(PackedStruct):
 @click.command()
 @click.option("--anchor", type=int, required=True, help="The ID of the anchor to perform DFU on")
 @click.option("--img-path", type=click.Path(exists=True), required=True, help="The path to the image to be flashed")
-@click.option("--update-config", type=bool, default=False, help="Whether to update the anchor config data in flash")
+@click.option("--config-update", type=bool, default=False, is_flag=True, help="Whether the update is for config data or app code (default: app code)")
 @click.option("--skip-req", type=bool, is_flag=True, default=False, help="Whether to skip sending the REQ message")
 @click.option("--broker-addr", type=str, default="localhost", help="The address of the MQTT broker")
 @click.option("--broker-port", type=int, default=1883, help="The port of the MQTT broker")
-def cli(anchor: int, img_path: str, update_config: bool, skip_req: bool, broker_addr: str, broker_port: int) -> None:
+def cli(anchor: int, img_path: str, config_update: bool, skip_req: bool, broker_addr: str, broker_port: int) -> None:
     # Get a binary blog of the image
     img_bytes: bytes
 
@@ -146,7 +148,8 @@ def cli(anchor: int, img_path: str, update_config: bool, skip_req: bool, broker_
         sys.exit(1)
 
     # pad with 0xFF to make the img completely fill the last page
-    img_bytes += b"\xFF" * ( FLASH_PAGE_SIZE - (len(img_bytes) % FLASH_PAGE_SIZE) )
+    if (len(img_bytes) % FLASH_PAGE_SIZE) != 0:
+        img_bytes += b"\xFF" * ( FLASH_PAGE_SIZE - (len(img_bytes) % FLASH_PAGE_SIZE) )
 
     if not skip_req:
         ############################################################################
@@ -198,11 +201,13 @@ def cli(anchor: int, img_path: str, update_config: bool, skip_req: bool, broker_
         img_crc        = calc_crc32(img_bytes)
         img_num_chunks = ceil( len(img_bytes) / DFU_CHUNK_SIZE )
 
+        update_type = DFU_UPDATE_TYPE_CONFIG_DATA if config_update else DFU_UPDATE_TYPE_APP_CODE
+
         metadata_msg = DFU_MetadataMsg( msg_type = DFU_MSG_TYPE_METADATA,
                                         img_crc = img_crc,
                                         img_num_chunks = img_num_chunks,
                                         img_num_bytes = len(img_bytes),
-                                        update_config_data = update_config )
+                                        update_type = update_type )
         conn.sendall( bytes(metadata_msg) )
 
         print( len(img_bytes))

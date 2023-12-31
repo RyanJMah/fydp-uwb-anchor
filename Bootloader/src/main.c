@@ -185,11 +185,8 @@ int main(void)
     //////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Prepare for DFU
+    // Init DFU
     err_code = DFU_Init();
-    require_noerr(err_code, err_handler);
-
-    err_code = DFU_EraseAppCode();
     require_noerr(err_code, err_handler);
     //////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -220,7 +217,27 @@ int main(void)
     metadata = *(DFU_MetadataMsg_t*)g_rx_buf;
     require(metadata.msg_type == DFU_MSG_TYPE_METADATA, err_handler);
 
-    GL_LOG("Received METADATA: %d chunks to download...\n", metadata.img_num_chunks);
+    GL_LOG("UPDATE TYPE: %d\n", metadata.update_type);
+
+    switch ( metadata.update_type )
+    {
+        case DFU_UPDATE_TYPE_APP_CODE:
+        {
+            GL_LOG("Received METADATA: APP CODE UPDATE: %d chunks to download...\n", metadata.img_num_chunks);
+            break;
+        }
+        
+        case DFU_UPDATE_TYPE_CONFIG_DATA:
+        {
+            GL_LOG("Received METADATA: CONFIG UPDATE: %d chunks to download...\n", metadata.img_num_chunks);
+            break;
+        }
+    }
+
+    DFU_SetUpdateType( metadata.update_type );    
+
+    err_code = DFU_EraseCurrentImg();
+    require_noerr(err_code, err_handler);
     //////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -291,6 +308,12 @@ int main(void)
 
     err_code = DFU_Deinit();
     require_noerr(err_code, err_handler);
+
+    if ( metadata.update_type == DFU_UPDATE_TYPE_CONFIG_DATA )
+    {
+        err_code = FlashConfigData_ReadBack();
+        require_noerr(err_code, err_handler);
+    }
 
     // Clear the fw_update_pending flag
     gp_persistent_conf->fw_update_pending = 0;

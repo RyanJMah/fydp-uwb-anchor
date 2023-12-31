@@ -2,12 +2,6 @@
 #include "nrf_log_ctrl.h"
 #include "crc32.h"
 
-#ifdef GL_BOOTLOADER
-    #include "nrf_fstorage_nvmc.h"
-#else
-    #include "nrf_fstorage_sd.h"
-#endif
-
 #include "gl_log.h"
 #include "flash_memory_map.h"
 #include "flash_config_data.h"
@@ -36,7 +30,7 @@ typedef struct __attribute__((aligned(4)))
 /*************************************************************
  * GLOBAL VARIABLES
  ************************************************************/
-static NRF_FSTORAGE_DEF(nrf_fstorage_t g_app_fstorage) =
+static NRF_FSTORAGE_DEF(nrf_fstorage_t g_fstorage) =
 {
     .evt_handler = NULL,
     .start_addr  = FLASH_CONFIG_DATA_START_ADDR,
@@ -81,36 +75,18 @@ ret_code_t FlashConfigData_Init(void)
 
 // Use SD for app, NVMC for bootloader
 #ifdef GL_BOOTLOADER
-    err_code = nrf_fstorage_init(&g_app_fstorage, &nrf_fstorage_nvmc, NULL);
+    err_code = nrf_fstorage_init(&g_fstorage, &nrf_fstorage_nvmc, NULL);
 #else
-    err_code = nrf_fstorage_init(&g_app_fstorage, &nrf_fstorage_sd, NULL);
+    err_code = nrf_fstorage_init(&g_fstorage, &nrf_fstorage_sd, NULL);
 #endif
 
     require_noerr(err_code, exit);
 
-    // Ready config data from flash
-    err_code = nrf_fstorage_read( &g_app_fstorage,
-                                  FLASH_CONFIG_DATA_START_ADDR,
-                                  &g_conf_with_padding,
-                                  sizeof(FlashConfigData_t) );
-    require_noerr(err_code, exit);
-
-    // Verify the CRC of the config data
-    if ( !_verify_crc(gp_persistent_conf) )
-    {
-        GL_LOG("REALLY BAD ERROR: corrupt config data, please re-flash device...\n");
-
-        while (1)
-        {
-            // Do nothing...
-        }
-    }
-
     // Mark as initialized
     g_is_initialized = 1;
 
-    FlashConfigData_Print();
-    GL_LOG("\n");
+    err_code = FlashConfigData_ReadBack();
+    require_noerr(err_code, exit);
 
 exit:
     return err_code;
@@ -149,6 +125,40 @@ void FlashConfigData_Print(void)
     GL_LOG("  - crc32:                  %08X\n", gp_persistent_conf->crc32);
 }
 
+ret_code_t FlashConfigData_ReadBack(void)
+{
+    if ( !g_is_initialized )
+    {
+        return NRF_ERROR_INVALID_STATE;
+    }
+
+    ret_code_t err_code;
+
+    // Ready config data from flash
+    err_code = nrf_fstorage_read( &g_fstorage,
+                                  FLASH_CONFIG_DATA_START_ADDR,
+                                  &g_conf_with_padding,
+                                  sizeof(FlashConfigData_t) );
+    require_noerr(err_code, exit);
+
+    // Verify the CRC of the config data
+    if ( !_verify_crc(gp_persistent_conf) )
+    {
+        GL_LOG("REALLY BAD ERROR: corrupt config data, please re-flash device...\n");
+
+        while (1)
+        {
+            // Do nothing...
+        }
+    }
+
+    FlashConfigData_Print();
+    GL_LOG("\n");
+
+exit:
+    return err_code;
+}
+
 ret_code_t FlashConfigData_WriteBack(void)
 {
     if ( !g_is_initialized )
@@ -162,14 +172,14 @@ ret_code_t FlashConfigData_WriteBack(void)
     gp_persistent_conf->crc32 = _compute_crc(gp_persistent_conf);
 
     // Erase the page before writing to it
-    err_code = nrf_fstorage_erase( &g_app_fstorage,
+    err_code = nrf_fstorage_erase( &g_fstorage,
                                    FLASH_CONFIG_DATA_START_ADDR,
                                    1,
                                    NULL );
     require_noerr(err_code, exit);
 
     // Write the config data to the swap page
-    err_code = nrf_fstorage_write( &g_app_fstorage,
+    err_code = nrf_fstorage_write( &g_fstorage,
                                    FLASH_CONFIG_DATA_START_ADDR,
                                    &g_conf_with_padding,
                                    sizeof(g_conf_with_padding),
@@ -192,9 +202,14 @@ ret_code_t FlashConfigData_Deinit(void)
     ret_code_t err_code;
 
     // De-initialize the flash storage module
-    err_code = nrf_fstorage_uninit(&g_app_fstorage, NULL);
+    err_code = nrf_fstorage_uninit(&g_fstorage, NULL);
     require_noerr(err_code, exit);
 
 exit:
     return err_code;
+}
+
+nrf_fstorage_t* FlashConfigData_GetFStorage(void)
+{
+    return &g_fstorage;
 }

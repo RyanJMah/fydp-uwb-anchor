@@ -51,26 +51,30 @@
  * names in the Python code.
  */
 
-#define DFU_SERVER_PORT         ( 6900 )
+#define DFU_SERVER_PORT                 ( 6900 )
 
-#define DFU_MSG_TYPE_REQ        ( 0x00 )
-#define DFU_MSG_TYPE_READY      ( 0x01 )
-#define DFU_MSG_TYPE_METADATA   ( 0x02 )
-#define DFU_MSG_TYPE_BEGIN      ( 0x03 )
-#define DFU_MSG_TYPE_CHUNK      ( 0x04 )
-#define DFU_MSG_TYPE_OK         ( 0x05 )
-#define DFU_MSG_TYPE_CONFIRM    ( 0x06 )
-#define DFU_MSG_TYPE_INVALID    ( 0x07 )
-#define DFU_MSG_IS_VALID(msg)   ( (msg) < DFU_MSG_TYPE_INVALID )
+#define DFU_MSG_TYPE_REQ                ( 0x00 )
+#define DFU_MSG_TYPE_READY              ( 0x01 )
+#define DFU_MSG_TYPE_METADATA           ( 0x02 )
+#define DFU_MSG_TYPE_BEGIN              ( 0x03 )
+#define DFU_MSG_TYPE_CHUNK              ( 0x04 )
+#define DFU_MSG_TYPE_OK                 ( 0x05 )
+#define DFU_MSG_TYPE_CONFIRM            ( 0x06 )
+#define DFU_MSG_TYPE_INVALID            ( 0x07 )
+#define DFU_MSG_IS_VALID(msg)           ( (msg) < DFU_MSG_TYPE_INVALID )
 
-#define DFU_CHUNK_SIZE          ( FLASH_PAGE_SIZE )
+#define DFU_UPDATE_TYPE_APP_CODE        ( 0x00 )
+#define DFU_UPDATE_TYPE_CONFIG_DATA     ( 0x01 )
 
-#define DFU_MAX_NUM_RETRIES     ( 10 )
+#define DFU_CHUNK_SIZE                  ( FLASH_PAGE_SIZE )
+
+#define DFU_MAX_NUM_RETRIES             ( 10 )
 
 /*************************************************************
  * TYPE DEFINITIONS
  ************************************************************/
 typedef uint8_t DFU_MsgType_t;
+typedef uint8_t DFU_UpdateType_t;
 
 typedef struct __attribute__((packed))
 {
@@ -84,11 +88,11 @@ typedef struct __attribute__((packed))
 
 typedef struct __attribute__((packed))
 {
-    DFU_MsgType_t msg_type;
-    uint32_t      img_crc;
-    uint32_t      img_num_chunks;
-    uint32_t      img_num_bytes;
-    uint8_t       update_config_data;   // 0 or 1
+    DFU_MsgType_t    msg_type;
+    uint32_t         img_crc;
+    uint32_t         img_num_chunks;
+    uint32_t         img_num_bytes;
+    DFU_UpdateType_t update_type;
 } DFU_MetadataMsg_t;
 
 typedef struct __attribute__((packed))

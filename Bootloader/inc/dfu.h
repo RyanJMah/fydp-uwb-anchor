@@ -19,7 +19,9 @@
 ret_code_t DFU_Init(void);
 ret_code_t DFU_Deinit(void);
 
-ret_code_t DFU_EraseAppCode(void);
+void DFU_SetUpdateType(DFU_UpdateType_t update_type);
+
+ret_code_t DFU_EraseCurrentImg(void);
 
 bool DFU_ValidateChunk(DFU_ChunkMsg_t* chunk);
 ret_code_t DFU_ValidateImage(DFU_MetadataMsg_t* p_metadata, bool* out_ok);
