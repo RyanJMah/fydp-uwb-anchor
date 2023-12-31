@@ -58,5 +58,5 @@ make flash_config_img ANCHOR_ID=<anchor_id>
 # DFU
 
 ```bash
-python3 perform_dfu.py --anchor <anchor_id> --img-path ./Projects/QANI/FreeRTOS/DWM3001CDK/ses/Output/Common/Exe/DWM3001CDK-QANI-FreeRTOS.bin
+python3 ./Scripts/perform_dfu.py --anchor <anchor_id> --img-path ./Projects/QANI/FreeRTOS/DWM3001CDK/ses/Output/Common/Exe/DWM3001CDK-QANI-FreeRTOS.bin
 ```
