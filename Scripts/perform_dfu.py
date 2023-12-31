@@ -115,13 +115,13 @@ class DFU_ConfirmMsg(PackedStruct):
     ]
 
 @click.command()
-@click.option("--anchor-id", type=int, required=True, help="The ID of the anchor to perform DFU on")
+@click.option("--anchor", type=int, required=True, help="The ID of the anchor to perform DFU on")
 @click.option("--img-path", type=click.Path(exists=True), required=True, help="The path to the image to be flashed")
 @click.option("--update-config", type=bool, default=False, help="Whether to update the anchor config data in flash")
 @click.option("--skip-req", type=bool, is_flag=True, default=False, help="Whether to skip sending the REQ message")
 @click.option("--broker-addr", type=str, default="localhost", help="The address of the MQTT broker")
 @click.option("--broker-port", type=int, default=1883, help="The port of the MQTT broker")
-def cli(anchor_id: int, img_path: str, update_config: bool, skip_req: bool, broker_addr: str, broker_port: int) -> None:
+def cli(anchor: int, img_path: str, update_config: bool, skip_req: bool, broker_addr: str, broker_port: int) -> None:
     # Get a binary blog of the image
     img_bytes: bytes
 
@@ -160,7 +160,7 @@ def cli(anchor_id: int, img_path: str, update_config: bool, skip_req: bool, brok
         client.connect(broker_addr, broker_port)
         client.loop_start()
 
-        client.publish( DFU_TOPIC_FMT % anchor_id, payload=DFU_HARDCODED_PASSWD.encode() )
+        client.publish( DFU_TOPIC_FMT % anchor, payload=DFU_HARDCODED_PASSWD.encode() )
         ############################################################################
 
     # The READY message is sent by the bootloader over TCP
