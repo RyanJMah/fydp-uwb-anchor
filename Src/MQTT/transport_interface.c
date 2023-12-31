@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "macros.h"
-#include "deca_dbg.h"
+#include "gl_log.h"
 #include "lan.h"
 #include "transport_interface.h"
 
@@ -53,12 +53,12 @@ int16_t TransportInterface_Init( TransportInterface_t* interface,
 {
     int16_t err_code;
 
-    diag_printf("Attempting to connect to server...\n");
+    GL_LOG("Attempting to connect to server...\n");
 
     err_code = NetworkContext_Init(&g_network_ctx, broker_addr, broker_port);
     require( err_code == SOCK_OK, exit );
 
-    diag_printf("Successfully connected to server!\n");
+    GL_LOG("Successfully connected to server!\n");
 
     interface->recv            = transport_recv;
     interface->send            = transport_send;

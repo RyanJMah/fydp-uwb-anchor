@@ -49,9 +49,8 @@
  *
  */
 
-#include "anchor_config.h"
+const char BoardName_Fmt[]    = "GL_Anchor_%u";
 
-const char ProjectName[]     = PROJECT_NAME_;
-const char BoardName[]       = BOARD_NAME_;
-const char OsName[]          = OS_NAME_;
-const char ApplicationName[] = APPLICATION_NAME_;
+char BoardName[sizeof(BoardName_Fmt) + 10] = {0};
+const char OsName[]          = "FreeRTOS";
+const char ApplicationName[] = "GuidingLite Anchor FW";

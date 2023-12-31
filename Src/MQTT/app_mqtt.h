@@ -3,19 +3,49 @@
 #include <stdint.h>
 #include "macros.h"
 #include "cmsis_os.h"
-#include "anchor_config.h"
 #include "fira_helper.h"
 #include "mqtt_client.h"
 
 /*************************************************************
  * MACROS
  ************************************************************/
-#define HEARTBEAT_TOPIC         "gl/anchor/" STR(ANCHOR_ID) "/heartbeat"
-#define DATA_TOPIC              "gl/anchor/" STR(ANCHOR_ID) "/data"
-#define CONN_REQ_TOPIC          "gl/anchor/" STR(ANCHOR_ID) "/conn/req"
-#define CONN_RESP_TOPIC         "gl/anchor/" STR(ANCHOR_ID) "/conn/resp"
-#define NI_CONFIG_TOPIC         "gl/anchor/" STR(ANCHOR_ID) "/conn/ni_config"
-#define BASE_SELF_CONFIG_TOPIC  "gl/anchor/" STR(ANCHOR_ID) "/config"
+#define HEARTBEAT_TOPIC_FMT         "gl/anchor/%u/heartbeat"
+#define DATA_TOPIC_FMT              "gl/anchor/%u/data"
+#define CONN_REQ_TOPIC_FMT          "gl/anchor/%u/conn/req"
+#define CONN_RESP_TOPIC_FMT         "gl/anchor/%u/conn/resp"
+#define NI_CONFIG_TOPIC_FMT         "gl/anchor/%u/conn/ni_config"
+#define BASE_SELF_CONFIG_TOPIC_FMT  "gl/anchor/%u/config"
+
+#define DFU_TOPIC_FMT               "gl/anchor/%u/dfu"
+#define DFU_HARDCODED_PASSWD        "guidinglite-69420" 
+
+/*************************************************************
+ * GLOBAL VARIABLES
+ ************************************************************/
+extern char    g_HEARTBEAT_TOPIC[];
+extern uint8_t g_HEARTBEAT_TOPIC_LEN;
+
+extern char    g_DATA_TOPIC[];
+extern uint8_t g_DATA_TOPIC_LEN;
+
+extern char    g_CONN_REQ_TOPIC[];
+extern uint8_t g_CONN_REQ_TOPIC_LEN;
+
+extern char    g_CONN_RESP_TOPIC[];
+extern uint8_t g_CONN_RESP_TOPIC_LEN;
+
+extern char    g_NI_CONFIG_TOPIC[];
+extern uint8_t g_NI_CONFIG_TOPIC_LEN;
+
+extern char    g_BASE_SELF_CONFIG_TOPIC[];
+extern uint8_t g_BASE_SELF_CONFIG_TOPIC_LEN;
+
+extern char    g_DFU_TOPIC[];
+extern uint8_t g_DFU_TOPIC_LEN;
+
+extern char    g_HARDCODED_DFU_PASSWD[];
+extern uint8_t g_HARDCODED_DFU_PASSWD_LEN;
+
 
 /*************************************************************
 * TYPE DEFINITIONS
@@ -35,6 +65,8 @@ typedef struct
 /*************************************************************
  * PUBLIC FUNCTIONS
  ************************************************************/
+void AppMqtt_Init(void);
+
 ALWAYS_INLINE MqttRetCode_t TelemetryData_Publish(struct ranging_measurements* rm)
 {
     TelemetryData_t telem_data =
@@ -44,7 +76,7 @@ ALWAYS_INLINE MqttRetCode_t TelemetryData_Publish(struct ranging_measurements* r
         .distance_mm        = rm->distance_mm,
     };
 
-    return MqttClient_Publish( DATA_TOPIC,
+    return MqttClient_Publish( g_DATA_TOPIC,
                                &telem_data,
                                sizeof(TelemetryData_t) );
 }

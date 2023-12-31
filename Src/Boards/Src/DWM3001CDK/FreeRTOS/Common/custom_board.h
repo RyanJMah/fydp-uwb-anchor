@@ -68,7 +68,7 @@ extern "C" {
 #define AOA_CHIP_ON_NON_AOA_PCB     ( 0 )
 
 // We fucked up soldering the LED Pins
-#define FUCKED_UP_LEDS              ( 1 )
+#define FUCKED_UP_LEDS              ( 0 )
 
 #if FUCKED_UP_LEDS
     #define LED_1          PIN_DISCONNECTED
@@ -83,7 +83,7 @@ extern "C" {
     #define LEDS_INV_MASK  LEDS_MASK
 #else
     #define LED_1          NRF_GPIO_PIN_MAP(0, 30)  //D9 on the schematics
-    #define LED_2          NRF_GPIO_PIN_MAP(0, 2)  //D10 on the schematics
+    #define LED_2          NRF_GPIO_PIN_MAP(0, 2)   //D10 on the schematics
     #define LED_START      LED_1
     #define LED_STOP       LED_2
     

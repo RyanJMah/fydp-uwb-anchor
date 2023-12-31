@@ -67,6 +67,7 @@
 #include "EventManager.h"
 #include "common_fira.h"
 
+#include "gl_log.h"
 #include "app_mqtt.h"
 
 #define OUTPUT_PDOA_ENABLE (1)
@@ -208,7 +209,7 @@ static void report_cb(const struct ranging_results *results, void *user_data) {
         MqttRetCode_t err_code = TelemetryData_Publish(rm);
         if ( err_code != MQTT_OK )
         {
-            diag_printf("TelemetryData_Publish FAILED: err_code=%d\n", err_code);
+            GL_LOG("TelemetryData_Publish FAILED: err_code=%d\n", err_code);
         }
     }
 }

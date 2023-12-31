@@ -1,4 +1,9 @@
 Build/
+build/
+_build/
 Output/
 compile_commands.*
 .DS_Store
+*.bin
+*.hex
+__pycache__/

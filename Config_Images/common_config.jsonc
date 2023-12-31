@@ -1,0 +1,24 @@
+{
+    "fw_update_pending": 0,
+
+    "socket_recv_timeout_ms": 5000,
+
+    // JSON doesn't allow hex literals: 40:BD:32:BE:FD:00
+    "mac_addr_base": [64, 189, 50, 190, 253, 0],
+
+    "using_dhcp": 1,
+
+    "static_ip_addr_base": [192, 168, 8, 3],
+    "static_netmask": [255, 255, 255, 0],
+    "static_gateway": [192, 168, 8, 1],
+
+    "server_hostname": [
+        "GuidingLight._mqtt._tcp.local."
+    ],
+    "server_ip_addr": [
+        [192, 168, 8, 2]
+    ],
+    "server_port": [
+        1883
+    ]
+}

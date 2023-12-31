@@ -1,12 +1,12 @@
 #include "cmsis_os.h"
-#include "anchor_config.h"
+#include "flash_config_data.h"
 #include "fira_helper.h"
+#include "gl_error.h"
 #include "macros.h"
-#include "deca_dbg.h"
+#include "gl_log.h"
 #include "custom_board.h"
 #include "w5500.h"
 #include "nrf_delay.h"
-#include "nrf_drv_gpiote.h"
 #include "app_mqtt.h"
 #include "mqtt_client.h"
 #include "lan.h"
@@ -36,8 +36,8 @@ static osTimerDef(g_heartbeat_timer, _send_heartbeat);
 static void interrupt_pin_handler( nrf_drv_gpiote_pin_t pin,
                                    nrf_gpiote_polarity_t action )
 {
-    // diag_printf("GOT W5500 INTERRUPT\n");
-    // diag_printf("sir=%d\n", getSIR());
+    // GL_LOG("GOT W5500 INTERRUPT\n");
+    // GL_LOG("sir=%d\n", getSIR());
 
     if ( action != GPIOTE_CONFIG_POLARITY_HiToLo )
     {
@@ -61,7 +61,45 @@ static void _send_heartbeat(const void* args UNUSED)
     static char _heartbeat_json[]      = "{\"status\": \"online\"}";
     static uint8_t _heartbeat_json_len = sizeof(_heartbeat_json) - 1;
 
-    MqttClient_Publish(HEARTBEAT_TOPIC, _heartbeat_json, _heartbeat_json_len);
+    MqttClient_Publish(g_HEARTBEAT_TOPIC, _heartbeat_json, _heartbeat_json_len);
+}
+
+static void _subscribe_callback( char* topic, uint32_t topic_len,
+                                 uint8_t* payload, uint32_t payload_len )
+{
+    if ( strncmp(topic, g_DFU_TOPIC, g_DFU_TOPIC_LEN) == 0 )
+    {
+        GL_LOG("DFU REQUESTED!\n");
+
+        if ( payload_len != g_HARDCODED_DFU_PASSWD_LEN )
+        {
+            GL_LOG("DFU FAILED: WRONG PASSWORD LENGTH\n");
+            return;
+        }
+
+        if ( strncmp((char* )payload, g_HARDCODED_DFU_PASSWD, g_HARDCODED_DFU_PASSWD_LEN) != 0 )
+        {
+            GL_LOG("DFU FAILED: WRONG PASSWORD\n");
+            return;
+        }
+
+        GL_LOG("DFU SUCCESS!\n");
+
+        gp_persistent_conf->fw_update_pending = 1;
+
+        ret_code_t err_code = FlashConfigData_WriteBack();
+        if ( err_code != NRF_SUCCESS )
+        {
+            GL_LOG("FAILED TO WRITEBACK FLASH CONFIG DATA, err_code=%d\n", err_code);
+            GL_FATAL_ERROR();
+        }
+
+        FlashConfigData_Print();
+
+        // Reset the device
+        GL_LOG("Restarting into bootloader...\n");
+        NVIC_SystemReset();
+    }
 }
 
 static ALWAYS_INLINE void _clear_interrupts(void)
@@ -74,34 +112,50 @@ static ALWAYS_INLINE void _clear_interrupts(void)
     }
 }
 
-static void _LANTask_Main(void const* args UNUSED)
+static ALWAYS_INLINE void _init_mqtt(void)
 {
-    MqttRetCode_t err_code;
+    GL_LOG("INITIALIZING MQTT AND LAN...\n");
 
-    diag_printf("INITIALIZING MQTT AND LAN...\n");
+    // Inits topic strings based on anchor id
+    AppMqtt_Init();
 
     // Initializes the W5500
     LAN_Init( interrupt_pin_handler );
 
     // Initialize MQTT
+    MqttRetCode_t err_code;
+    
     err_code = MqttClient_Init();
+
     if ( err_code != MQTT_OK )
     {
-        diag_printf("FAILED TO CONNECT TO BROKER, err_code=%d\n", err_code);
-        NVIC_SystemReset();
+        GL_LOG("FAILED TO CONNECT TO BROKER, err_code=%d\n", err_code);
+        GL_FATAL_ERROR();
     }
+
+    // Sub to topics
+    MqttClient_RegisterSubscribeCallback( _subscribe_callback );
+
+    err_code = MqttClient_Subscribe(g_DFU_TOPIC, g_DFU_TOPIC_LEN);
 
     // Create and start the heartbeat timer...
     g_heartbeat_timer_id = osTimerCreate( osTimer(g_heartbeat_timer),
                                           osTimerPeriodic,
                                           NULL );
     osTimerStart( g_heartbeat_timer_id, MQTT_HEARTBEAT_PERIODICITY_MS );
+}
+
+static void _LANTask_Main(void const* args UNUSED)
+{
+    MqttRetCode_t err_code;
+
+    _init_mqtt();
 
     while (1)
     {
         osSignalWait(RECV_INTERRUPT_SIGNAL, osWaitForever);
 
-        // diag_printf("RECEIVED MESSAGE!");
+        // GL_LOG("RECEIVED MESSAGE!");
 
         err_code = MqttClient_ManageRunLoop();
         switch (err_code)
@@ -111,8 +165,8 @@ static void _LANTask_Main(void const* args UNUSED)
             case MQTT_ILLEGAL_STATE:
             case MQTT_SOCK_INTERNAL_ERR:
             {
-                diag_printf("ManageRunLoop failed: err_code=%d\n", err_code);
-                NVIC_SystemReset();
+                GL_LOG("ManageRunLoop failed: err_code=%d\n", err_code);
+                GL_FATAL_ERROR();
             }
 
             default:
@@ -137,7 +191,7 @@ void LANTask_Init(void)
 
     if ( g_lan_task_id == NULL )
     {
-        diag_printf("FAILED TO CREATE LAN TASK...\n");
+        GL_LOG("FAILED TO CREATE LAN TASK...\n");
     }
     //////////////////////////////////////////////////////////////////////////
 }

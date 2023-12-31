@@ -1,0 +1,4 @@
+intelhex
+click
+commentjson
+paho-mqtt

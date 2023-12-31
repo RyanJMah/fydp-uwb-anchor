@@ -1,15 +1,18 @@
 #include <string.h>
-#include "deca_dbg.h"
+#include "core_mqtt_serializer.h"
+#include "gl_log.h"
 #include "macros.h"
 #include "cmsis_os.h"
 #include "core_mqtt.h"
-#include "anchor_config.h"
 #include "mqtt_client.h"
+#include "flash_config_data.h"
 
 /*************************************************************
  * MACROS
  ************************************************************/
 #define MQTT_CLIENT_BUFF_SIZE       ( 1024*5 )
+
+#define MQTT_MAX_SUBSCRIBTIONS      ( 10 )
 
 #define OUTGOING_PUBLISH_BUFF_LEN   ( 10 )
 #define INCOMING_PUBLISH_BUFF_LEN   ( 10 )
@@ -31,12 +34,12 @@ static uint8_t              g_buffer[ MQTT_CLIENT_BUFF_SIZE ];
 static MQTTPubAckInfo_t     g_outgoing_publishes[ OUTGOING_PUBLISH_BUFF_LEN ];
 static MQTTPubAckInfo_t     g_incoming_publishes[ INCOMING_PUBLISH_BUFF_LEN ];
 
+static MqttClient_SubscribeCallback_t g_sub_cb = NULL;
+static MQTTSubscribeInfo_t            g_sub_list[ MQTT_MAX_SUBSCRIBTIONS ];
+
 static MQTTConnectInfo_t    g_connection_info;
 
-const ipv4_addr_t g_broker_addr =
-{
-    .bytes = MQTT_BROKER_ADDR
-};
+static char g_client_id[ sizeof(MQTT_CLIENT_IDENTIFIER_FMT) + 2 ];
 
 /*************************************************************
  * PRIVATE FUNCTIONS
@@ -51,7 +54,16 @@ static void eventCallback( MQTTContext_t * pContext,
                            MQTTPacketInfo_t * pPacketInfo,
                            MQTTDeserializedInfo_t * pDeserializedInfo )
 {
+    if (pPacketInfo->type == MQTT_PACKET_TYPE_PUBLISH)
+    {
+        MQTTPublishInfo_t *pPublishInfo = pDeserializedInfo->pPublishInfo;
 
+        if (g_sub_cb != NULL)
+        {
+            g_sub_cb( (char* )pPublishInfo->pTopicName, pPublishInfo->topicNameLength,
+                      (uint8_t* )pPublishInfo->pPayload, pPublishInfo->payloadLength );
+        }
+    }
 }
 
 /*************************************************************
@@ -65,11 +77,13 @@ MqttRetCode_t MqttClient_Init(void)
     // Clear context...
     memset( &g_mqtt_ctx, 0x00, sizeof(g_mqtt_ctx) );
 
+    // TODO: Try all the fallback servers in case of failure.
+
     // Initialize transport interface...
     sock_err_code = TransportInterface_Init( &g_transport,
-                                              g_broker_addr,
-                                              MQTT_BROKER_PORT );
-    require_action( sock_err_code == SOCK_OK, exit, err_code = MQTT_SOCK_INTERNAL_ERR );
+                                              gp_persistent_conf->server_ip_addr[0],
+                                              gp_persistent_conf->server_port[0] );
+    require_action( sock_err_code > 0, exit, err_code = MQTT_SOCK_INTERNAL_ERR );
 
     // Set buffer members.
     g_fixed_buffer.pBuffer = g_buffer;
@@ -90,7 +104,7 @@ MqttRetCode_t MqttClient_Init(void)
     require_noerr(err_code, exit);
 
     // Clear connection info struct...
-   memset( &g_connection_info, 0, sizeof(g_connection_info) ); 
+    memset( &g_connection_info, 0, sizeof(g_connection_info) ); 
 
     /* Start with a clean session i.e. direct the MQTT broker to discard any
      * previous session data. Also, establishing a connection with clean session
@@ -101,8 +115,13 @@ MqttRetCode_t MqttClient_Init(void)
     /* The client identifier is used to uniquely identify this MQTT client to
      * the MQTT broker. In a production device the identifier can be something
      * unique, such as a device serial number. */
-    g_connection_info.pClientIdentifier = MQTT_CLIENT_IDENTIFIER;
-    g_connection_info.clientIdentifierLength = (uint16_t)strlen(MQTT_CLIENT_IDENTIFIER);
+    uint16_t client_id_len = snprintf( g_client_id,
+                                       sizeof(g_client_id),
+                                       MQTT_CLIENT_IDENTIFIER_FMT,
+                                       gp_persistent_conf->anchor_id );
+
+    g_connection_info.pClientIdentifier = g_client_id;
+    g_connection_info.clientIdentifierLength = client_id_len;
 
     /* Set MQTT keep-alive period. If the application does not send packets at an interval less than
      * the keep-alive period, the MQTT library will send PINGREQ packets. */
@@ -116,7 +135,7 @@ MqttRetCode_t MqttClient_Init(void)
                              &session_present );
     require_noerr(err_code, exit);
 
-    diag_printf("Successfully connected to MQTT broker...\n");
+    GL_LOG("Successfully connected to MQTT broker...\n");
 
 exit:
     return err_code;
@@ -140,4 +159,29 @@ MqttRetCode_t MqttClient_Publish(char* topic, void* data, uint32_t len)
     uint16_t pkt_id = MQTT_GetPacketId(&g_mqtt_ctx);
 
     return MQTT_Publish(&g_mqtt_ctx, &publish_info, pkt_id);
+}
+
+MqttRetCode_t MqttClient_Subscribe(char* topic, uint32_t topic_len)
+{
+    static uint32_t curr_sub_indx = 0;
+
+    g_sub_list[curr_sub_indx].pTopicFilter      = topic;
+    g_sub_list[curr_sub_indx].topicFilterLength = topic_len;
+    g_sub_list[curr_sub_indx].qos               = MQTTQoS0;
+
+    uint16_t pkt_id = MQTT_GetPacketId( &g_mqtt_ctx );
+
+    MqttRetCode_t ret = MQTT_Subscribe( &g_mqtt_ctx,
+                                        &g_sub_list[curr_sub_indx],
+                                        1,
+                                        pkt_id );
+
+    curr_sub_indx = (curr_sub_indx + 1) % MQTT_MAX_SUBSCRIBTIONS;
+
+    return ret;
+}
+
+void MqttClient_RegisterSubscribeCallback(MqttClient_SubscribeCallback_t cb)
+{
+    g_sub_cb = cb;
 }

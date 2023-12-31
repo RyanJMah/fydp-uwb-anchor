@@ -49,14 +49,17 @@
 //
 //*****************************************************************************
 
+#include "flash_config_data.h"
+#include "gl_error.h"
+#define _DHCP_DEBUG_
+
+#include "gl_log.h"
+
 #include "socket.h"
 #include "dhcp.h"
 
 /* If you want to display debug & procssing message, Define _DHCP_DEBUG_ in dhcp.h */
 
-#ifdef _DHCP_DEBUG_
-   #include <stdio.h>
-#endif   
 
 /* DHCP state machine. */
 #define STATE_DHCP_INIT          0        ///< Initialize
@@ -212,7 +215,7 @@ uint32_t DHCP_XID;      // Any number
 
 RIP_MSG* pDHCPMSG;      // Buffer pointer for DHCP processing
 
-uint8_t HOST_NAME[] = DCHP_HOST_NAME;  
+uint8_t HOSTNAME[] = DCHP_HOSTNAME;
 
 uint8_t DHCP_CHADDR[6]; // DHCP Client MAC address.
 
@@ -377,8 +380,13 @@ void send_DHCP_DISCOVER(void)
 	// host name
 	pDHCPMSG->OPT[k++] = hostName;
 	pDHCPMSG->OPT[k++] = 0;          // fill zero length of hostname 
-	for(i = 0 ; HOST_NAME[i] != 0; i++)
-   	pDHCPMSG->OPT[k++] = HOST_NAME[i];
+
+
+    for (i = 0; i < sizeof(HOSTNAME); i++)
+    {
+        pDHCPMSG->OPT[k++] = HOSTNAME[i];
+    }
+
 	pDHCPMSG->OPT[k++] = DHCP_CHADDR[3];
 	pDHCPMSG->OPT[k++] = DHCP_CHADDR[4];
 	pDHCPMSG->OPT[k++] = DHCP_CHADDR[5];
@@ -403,10 +411,16 @@ void send_DHCP_DISCOVER(void)
 	ip[3] = 255;
 
 #ifdef _DHCP_DEBUG_
-	printf("> Send DHCP_DISCOVER\r\n");
+	GL_LOG("> Send DHCP_DISCOVER\r\n");
 #endif
 
-	sendto(DHCP_SOCKET, (uint8_t *)pDHCPMSG, RIP_MSG_SIZE, ip, DHCP_SERVER_PORT);
+	int32_t status = sendto(DHCP_SOCKET, (uint8_t *)pDHCPMSG, RIP_MSG_SIZE, ip, DHCP_SERVER_PORT);
+
+    if (status < 0)
+    {
+        GL_LOG("ERROR: sendto() failed with status %d\r\n", status);
+        GL_FATAL_ERROR();
+    }
 }
 
 /* SEND DHCP REQUEST */
@@ -476,8 +490,12 @@ void send_DHCP_REQUEST(void)
 	// host name
 	pDHCPMSG->OPT[k++] = hostName;
 	pDHCPMSG->OPT[k++] = 0; // length of hostname
-	for(i = 0 ; HOST_NAME[i] != 0; i++)
-   	pDHCPMSG->OPT[k++] = HOST_NAME[i];
+
+    for (i = 0; i < sizeof(HOSTNAME); i++)
+    {
+        pDHCPMSG->OPT[k++] = HOSTNAME[i];
+    }
+
 	pDHCPMSG->OPT[k++] = DHCP_CHADDR[3];
 	pDHCPMSG->OPT[k++] = DHCP_CHADDR[4];
 	pDHCPMSG->OPT[k++] = DHCP_CHADDR[5];
@@ -498,7 +516,7 @@ void send_DHCP_REQUEST(void)
 	for (i = k; i < OPT_SIZE; i++) pDHCPMSG->OPT[i] = 0;
 
 #ifdef _DHCP_DEBUG_
-	printf("> Send DHCP_REQUEST\r\n");
+	GL_LOG("> Send DHCP_REQUEST\r\n");
 #endif
 	
 	sendto(DHCP_SOCKET, (uint8_t *)pDHCPMSG, RIP_MSG_SIZE, ip, DHCP_SERVER_PORT);
@@ -559,7 +577,7 @@ void send_DHCP_DECLINE(void)
 	ip[3] = 0xFF;
 
 #ifdef _DHCP_DEBUG_
-	printf("\r\n> Send DHCP_DECLINE\r\n");
+	GL_LOG("\r\n> Send DHCP_DECLINE\r\n");
 #endif
 
 	sendto(DHCP_SOCKET, (uint8_t *)pDHCPMSG, RIP_MSG_SIZE, ip, DHCP_SERVER_PORT);
@@ -574,18 +592,24 @@ int8_t parseDHCPMSG(void)
 
 	uint8_t * p;
 	uint8_t * e;
-	uint8_t type;
+	uint8_t type = 0;
 	uint8_t opt_len;
    
-   if((len = getSn_RX_RSR(DHCP_SOCKET)) > 0)
-   {
-   	len = recvfrom(DHCP_SOCKET, (uint8_t *)pDHCPMSG, len, svr_addr, &svr_port);
-   #ifdef _DHCP_DEBUG_   
-      printf("DHCP message : %d.%d.%d.%d(%d) %d received. \r\n",svr_addr[0],svr_addr[1],svr_addr[2], svr_addr[3],svr_port, len);
-   #endif   
-   }
-   else return 0;
-	if (svr_port == DHCP_SERVER_PORT) {
+    if((len = getSn_RX_RSR(DHCP_SOCKET)) > 0)
+    {
+    	len = recvfrom(DHCP_SOCKET, (uint8_t *)pDHCPMSG, len, svr_addr, &svr_port);
+
+    #ifdef _DHCP_DEBUG_   
+        GL_LOG("DHCP message : %d.%d.%d.%d(%d) %d received. \r\n",svr_addr[0],svr_addr[1],svr_addr[2], svr_addr[3],svr_port, len);
+    #endif   
+    }
+    else
+    {
+        return 0;
+    }
+
+	if (svr_port == DHCP_SERVER_PORT)
+    {
       // compare mac address
 		if ( (pDHCPMSG->chaddr[0] != DHCP_CHADDR[0]) || (pDHCPMSG->chaddr[1] != DHCP_CHADDR[1]) ||
 		     (pDHCPMSG->chaddr[2] != DHCP_CHADDR[2]) || (pDHCPMSG->chaddr[3] != DHCP_CHADDR[3]) ||
@@ -675,7 +699,14 @@ uint8_t DHCP_run(void)
 	if(dhcp_state == STATE_DHCP_STOP) return DHCP_STOPPED;
 
 	if(getSn_SR(DHCP_SOCKET) != SOCK_UDP)
-	   socket(DHCP_SOCKET, Sn_MR_UDP, DHCP_CLIENT_PORT, 0x00);
+    {
+        GL_LOG("creating DHCP UDP socket\n");
+	    if ( socket(DHCP_SOCKET, Sn_MR_UDP, DHCP_CLIENT_PORT, 0x00) != DHCP_SOCKET )
+        {
+            GL_LOG("ERROR: DHCP socket() failed\r\n");
+            GL_FATAL_ERROR();
+        }
+    }
 
 	ret = DHCP_RUNNING;
 	type = parseDHCPMSG();
@@ -692,7 +723,7 @@ uint8_t DHCP_run(void)
 		case STATE_DHCP_DISCOVER :
 			if (type == DHCP_OFFER){
 #ifdef _DHCP_DEBUG_
-				printf("> Receive DHCP_OFFER\r\n");
+				GL_LOG("> Receive DHCP_OFFER\r\n");
 #endif
             DHCP_allocated_ip[0] = pDHCPMSG->yiaddr[0];
             DHCP_allocated_ip[1] = pDHCPMSG->yiaddr[1];
@@ -708,7 +739,7 @@ uint8_t DHCP_run(void)
 			if (type == DHCP_ACK) {
 
 #ifdef _DHCP_DEBUG_
-				printf("> Receive DHCP_ACK\r\n");
+				GL_LOG("> Receive DHCP_ACK\r\n");
 #endif
 				if (check_DHCP_leasedIP()) {
 					// Network info assignment from DHCP
@@ -725,7 +756,7 @@ uint8_t DHCP_run(void)
 			} else if (type == DHCP_NAK) {
 
 #ifdef _DHCP_DEBUG_
-				printf("> Receive DHCP_NACK\r\n");
+				GL_LOG("> Receive DHCP_NACK\r\n");
 #endif
 
 				reset_DHCP_timeout();
@@ -739,7 +770,7 @@ uint8_t DHCP_run(void)
 			if ((dhcp_lease_time != INFINITE_LEASETIME) && ((dhcp_lease_time/2) < dhcp_tick_1s)) {
 				
 #ifdef _DHCP_DEBUG_
- 				printf("> Maintains the IP address \r\n");
+ 				GL_LOG("> Maintains the IP address \r\n");
 #endif
 
 				type = 0;
@@ -770,19 +801,19 @@ uint8_t DHCP_run(void)
 					ret = DHCP_IP_CHANGED;
 					dhcp_ip_update();
                #ifdef _DHCP_DEBUG_
-                  printf(">IP changed.\r\n");
+                  GL_LOG(">IP changed.\r\n");
                #endif
 					
 				}
          #ifdef _DHCP_DEBUG_
-            else printf(">IP is continued.\r\n");
+            else GL_LOG(">IP is continued.\r\n");
          #endif            				
 				reset_DHCP_timeout();
 				dhcp_state = STATE_DHCP_LEASED;
 			} else if (type == DHCP_NAK) {
 
 #ifdef _DHCP_DEBUG_
-				printf("> Receive DHCP_NACK, Failed to maintain ip\r\n");
+				GL_LOG("> Receive DHCP_NACK, Failed to maintain ip\r\n");
 #endif
 
 				reset_DHCP_timeout();
@@ -812,18 +843,18 @@ uint8_t check_DHCP_timeout(void)
 
 			switch ( dhcp_state ) {
 				case STATE_DHCP_DISCOVER :
-//					printf("<<timeout>> state : STATE_DHCP_DISCOVER\r\n");
+//					GL_LOG("<<timeout>> state : STATE_DHCP_DISCOVER\r\n");
 					send_DHCP_DISCOVER();
 				break;
 		
 				case STATE_DHCP_REQUEST :
-//					printf("<<timeout>> state : STATE_DHCP_REQUEST\r\n");
+//					GL_LOG("<<timeout>> state : STATE_DHCP_REQUEST\r\n");
 
 					send_DHCP_REQUEST();
 				break;
 
 				case STATE_DHCP_REREQUEST :
-//					printf("<<timeout>> state : STATE_DHCP_REREQUEST\r\n");
+//					GL_LOG("<<timeout>> state : STATE_DHCP_REREQUEST\r\n");
 					
 					send_DHCP_REQUEST();
 				break;
@@ -876,7 +907,7 @@ int8_t check_DHCP_leasedIP(void)
 		// UDP send Timeout occurred : allocated IP address is unique, DHCP Success
 
 #ifdef _DHCP_DEBUG_
-		printf("\r\n> Check leased IP - OK\r\n");
+		GL_LOG("\r\n> Check leased IP - OK\r\n");
 #endif
 
 		return 1;

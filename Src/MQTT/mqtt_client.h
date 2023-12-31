@@ -7,6 +7,11 @@
 /*************************************************************
  * TYPE DEFINITIONS
  ************************************************************/
+#define MQTT_CLIENT_IDENTIFIER_FMT      "GuidingLite_Anchor_%u"
+
+/*************************************************************
+ * TYPE DEFINITIONS
+ ************************************************************/
 
 // Same as MQTTStatus_t but with some more fields
 typedef enum
@@ -28,6 +33,9 @@ typedef enum
     MQTT_SOCK_INTERNAL_ERR,     /**< Something bad happend with a W5500 socket */
 } MqttRetCode_t;
 
+typedef void ( *MqttClient_SubscribeCallback_t )( char* topic, uint32_t topic_len,
+                                                  uint8_t* payload, uint32_t payload_len );
+
 /*************************************************************
  * PRIVATE FUNCTIONS
  ************************************************************/
@@ -44,3 +52,6 @@ MqttRetCode_t MqttClient_Init(void);
 MqttRetCode_t MqttClient_ManageRunLoop(void);
 
 MqttRetCode_t MqttClient_Publish(char* topic, void* data, uint32_t len);
+MqttRetCode_t MqttClient_Subscribe(char* topic, uint32_t topic_len);
+
+void MqttClient_RegisterSubscribeCallback(MqttClient_SubscribeCallback_t cb);
