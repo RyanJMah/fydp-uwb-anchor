@@ -13,11 +13,6 @@
 #include "dfu.h"
 
 /*************************************************************
- * MACROS
- ************************************************************/
-#define APP_NUM_PAGES       ( FLASH_APP_SIZE / FLASH_PAGE_SIZE )
-
-/*************************************************************
  * GLOBAL VARIABLES
  ************************************************************/
 static NRF_FSTORAGE_DEF(nrf_fstorage_t g_app_code_fstorage) =
@@ -101,8 +96,11 @@ ret_code_t DFU_EraseCurrentImg(void)
 
     ret_code_t err_code;
 
-    // // Erase all the app code pages
-    err_code = nrf_fstorage_erase(g_fstorage, g_fstorage->start_addr, APP_NUM_PAGES, NULL);
+    // Erase all the pages
+
+    uint32_t num_pages = (g_fstorage->end_addr - g_fstorage->start_addr) / FLASH_PAGE_SIZE;
+
+    err_code = nrf_fstorage_erase(g_fstorage, g_fstorage->start_addr, num_pages, NULL);
     require_noerr(err_code, exit);
 
 exit:
