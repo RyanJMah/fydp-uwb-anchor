@@ -50,8 +50,6 @@ class Hostname(LittleEndianStructure):
 class FlashConfig(LittleEndianStructure):
     _pack_ = 1
     _fields_ = [
-        ("swap_count",              c_uint32),
-
         ("fw_update_pending",       c_uint8),
 
         ("anchor_id",               c_uint8),
@@ -86,8 +84,6 @@ def generate_anchor_config(anchor_id: int):
 
     with open(common_json_path, "r") as f:
         json_conf = json.load(f)
-
-    swap_count = json_conf["swap_count"]
 
     fw_update_pending = json_conf["fw_update_pending"]
 
@@ -130,8 +126,7 @@ def generate_anchor_config(anchor_id: int):
 
     server_port_    = (c_uint32 * NUM_FALLBACK_SERVERS)(*server_port)
 
-    flash_config = FlashConfig( swap_count,
-                                fw_update_pending,
+    flash_config = FlashConfig( fw_update_pending,
                                 anchor_id,
                                 socket_recv_timeout_ms,
                                 mac_addr_,
@@ -153,8 +148,8 @@ def generate_anchor_config(anchor_id: int):
     # Bytes to write to flash
     provisioning_bytes = bytes(flash_config)
 
-    # pad with FFs so it spans 2 pages
-    provisioning_bytes += bytes( [0xFF] * (FLASH_CONFIG_DATA_END_ADDR - FLASH_CONFIG_DATA_START_ADDR - len(provisioning_bytes)) )
+    # pad with FFs so it spans the whole page
+    provisioning_bytes += bytes( [0xFF] * (FLASH_CONFIG_DATA_END_ADDR - FLASH_CONFIG_DATA_START_ADDR - len(provisioning_bytes) + 1) )
 
     os.makedirs(BIN_DIR, exist_ok=True)
 

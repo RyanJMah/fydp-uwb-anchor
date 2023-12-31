@@ -2,6 +2,7 @@ import sys
 import time
 import socket
 import click
+import intelhex
 from math import ceil
 from ctypes import LittleEndianStructure, c_uint32, c_uint8
 
@@ -122,8 +123,21 @@ def cli(anchor_id: int, img_path: str, update_config: bool, skip_req: bool) -> N
     # Get a binary blog of the image
     img_bytes: bytes
 
-    with open(img_path, "rb") as f:
-        img_bytes = f.read()
+    if img_path.endswith(".hex"):
+        with open(img_path, "r") as f:
+            ih = intelhex.IntelHex()
+            ih.loadhex(f)
+
+            img_bytes = ih.tobinstr()
+
+    elif img_path.endswith(".bin"):
+        with open(img_path, "rb") as f:
+            img_bytes = f.read()
+
+    else:
+        print("ERROR: image must be in .hex or .bin format")
+        sys.exit(1)
+
 
     if len(img_bytes) > FLASH_APP_SIZE:
         print(f"ERROR: image is too large ({len(img_bytes)}, max size = {FLASH_APP_SIZE} bytes)")

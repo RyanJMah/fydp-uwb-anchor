@@ -22,7 +22,7 @@ static NRF_FSTORAGE_DEF(nrf_fstorage_t g_app_code_fstorage) =
 {
     .evt_handler = NULL,
     .start_addr  = FLASH_APP_START_ADDR,
-    .end_addr    = FLASH_APP_END_ADDR
+    .end_addr    = FLASH_APP_END_ADDR + 1
 };
 
 static uint8_t g_is_initialized = 0;

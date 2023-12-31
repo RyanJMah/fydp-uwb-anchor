@@ -77,6 +77,7 @@ static ALWAYS_INLINE void _clear_interrupts(void)
 static ALWAYS_INLINE void _init_mqtt(void)
 {
     GL_LOG("INITIALIZING MQTT AND LAN...\n");
+    GL_LOG("ADDING THIS LOG TO SEE IF APP CODE CHANGES\n");
 
     // Inits topic strings based on anchor id
     AppMqtt_Init();

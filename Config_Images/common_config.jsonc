@@ -1,6 +1,4 @@
 {
-    "swap_count": 0,
-
     "fw_update_pending": 1,
 
     "socket_recv_timeout_ms": 5000,

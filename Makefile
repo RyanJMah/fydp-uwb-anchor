@@ -57,7 +57,7 @@ endef
 all:
 	@$(EM_BUILD) -echo -config "Common" $(DWM3001CDK_PROJ_XML) 2>&1
 	@$(SIZE) $(TARGET_ELF)
-	@$(OBJCOPY) -O binary $(TARGET_ELF) $(TARGET_BIN)
+	@$(OBJCOPY) --gap-fill 255 -O binary $(TARGET_ELF) $(TARGET_BIN)
 	$(call get_constants_from_headers)
 
 .PHONY: clean
@@ -100,6 +100,7 @@ $(CONFIG_BIN_DIR):
 
 .PHONY: config_imgs
 config_imgs: $(CONFIG_BIN_DIR)
+	$(call get_constants_from_headers)
 	python3 Scripts/generate_config_imgs.py
 
 .PHONY: clean_config_imgs
