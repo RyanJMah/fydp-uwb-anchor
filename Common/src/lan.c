@@ -246,7 +246,9 @@ static ALWAYS_INLINE void _dhcp_net_init(void)
 #else
     // Can't get timers to work in bootloader for some reason, too lazy to debug,
     // will just use a lazier implementation
-    nrf_delay_ms(5000);
+
+    nrf_delay_ms(6000);
+
     while (1)
     {
         ret_code = DHCP_run();
