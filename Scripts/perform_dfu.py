@@ -17,7 +17,8 @@ from header_constants import (
     DFU_MSG_IS_VALID,
     DFU_CHUNK_SIZE,
     DFU_SERVER_PORT,
-    DFU_TOPIC_FMT
+    DFU_TOPIC_FMT,
+    FLASH_APP_SIZE
 )
 from Calc_CRC32 import calc_crc32
 
@@ -123,6 +124,10 @@ def cli(anchor_id: int, img_path: str, update_config: bool, skip_req: bool) -> N
     with open(img_path, "rb") as f:
         img_bytes = f.read()
 
+    if len(img_bytes) > FLASH_APP_SIZE:
+        print(f"ERROR: image is too large ({len(img_bytes)}, max size = {FLASH_APP_SIZE} bytes)")
+        sys.exit(1)
+
     if not skip_req:
         # The initial REQ message is sent to the anchor over MQTT, since
         # it would have been running the app code at this point.
@@ -209,8 +214,7 @@ def cli(anchor_id: int, img_path: str, update_config: bool, skip_req: bool) -> N
             chunk_msg.chunk_crc32 = calc_crc32( bytes(chunks[i]) )
 
             conn.sendall( bytes(chunk_msg) )
-            print(f"Sent CHUNK {i}, CRC = {chunk_msg.chunk_crc32:08X}")
-            print(f"chunk = {chunks[i]}")
+            print(f"Sent CHUNK {i} / {len(chunks) - 1}, CRC = {chunk_msg.chunk_crc32:08X}")
 
             ###########################################################
             # OK MESSAGE
@@ -220,7 +224,7 @@ def cli(anchor_id: int, img_path: str, update_config: bool, skip_req: bool) -> N
             assert(ok_msg.msg_type == DFU_MSG_TYPE_OK)
             ###########################################################
 
-            print(f"Received OK: {bool(ok_msg.ok)}")
+            print(f"Received OK: {bool(ok_msg.ok)}\n")
 
             return bool(ok_msg.ok)
 

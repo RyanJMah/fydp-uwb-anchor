@@ -73,6 +73,56 @@ exit:
     return sock_err_code;
 }
 
+static ret_code_t _handle_chunk(void)
+{
+    int32_t    sock_err_code = 0;
+    ret_code_t err_code      = NRF_SUCCESS;
+
+    uint8_t num_retries = 0;
+
+    while ( num_retries++ < DFU_MAX_NUM_RETRIES )
+    {
+        sock_err_code = _recieve_chunk();
+        require_action(sock_err_code > 0, exit, err_code = NRF_ERROR_INTERNAL);
+
+        DFU_ChunkMsg_t* p_chunk = (DFU_ChunkMsg_t*)g_rx_buf;
+
+        if ( p_chunk->msg_type != DFU_MSG_TYPE_CHUNK )
+        {
+            GL_LOG("Received invalid message type: 0x%02X, retrying\n", p_chunk->msg_type);
+
+            _nack_chunk();
+            require_action(sock_err_code > 0, exit, err_code = NRF_ERROR_INTERNAL);
+
+            continue;
+        }
+        else if ( !DFU_ValidateChunk(p_chunk) )
+        {
+            GL_LOG("CRC mismatch, retrying...\n");
+
+            _nack_chunk();
+            require_action(sock_err_code > 0, exit, err_code = NRF_ERROR_INTERNAL);
+
+            continue;
+        }
+        else // Chunk is good
+        {
+            _ack_chunk();
+            require_action(sock_err_code > 0, exit, err_code = NRF_ERROR_INTERNAL);
+
+            // Write the chunk to flash
+            err_code = DFU_WriteChunk(p_chunk);
+            require_noerr(err_code, exit);
+
+            // Success, move on to the next chunk
+            break;
+        }
+    }
+
+exit:
+    return err_code;
+}
+
 /*************************************************************
  * MAIN
  ************************************************************/
@@ -169,6 +219,8 @@ int main(void)
 
     metadata = *(DFU_MetadataMsg_t*)g_rx_buf;
     require(metadata.msg_type == DFU_MSG_TYPE_METADATA, err_handler);
+
+    GL_LOG("Received METADATA: %d chunks to download...\n", metadata.img_num_chunks);
     //////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -188,47 +240,13 @@ int main(void)
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     // Receive and handle CHUNK messages
-    uint8_t num_retries = 0;
-
     for (uint32_t i = 0; i < metadata.img_num_chunks; i++)
     {
-        while ( num_retries++ <= DFU_MAX_NUM_RETRIES )
-        {
-            GL_LOG("Waiting for CHUNK %d...\n", i);
+        GL_LOG("\nWaiting for CHUNK %d / %d...\n", i, metadata.img_num_chunks - 1);
 
-            sock_err_code = _recieve_chunk();
-            require(sock_err_code > 0, err_handler);
-
-            DFU_ChunkMsg_t* p_chunk = (DFU_ChunkMsg_t*)g_rx_buf;
-
-            if ( p_chunk->msg_type != DFU_MSG_TYPE_CHUNK )
-            {
-                GL_LOG("Received unexpected message type %d, retrying...\n", p_chunk->msg_type);
-
-                _nack_chunk();
-                continue;
-            }
-            else if ( !DFU_ValidateChunk(p_chunk) )
-            {
-                GL_LOG("Chunk CRC doesn't match, retrying...\n");
-
-                _nack_chunk();
-                continue;
-            }
-            else // Chunk is good
-            {
-                _ack_chunk();
-
-                // Write the chunk to flash
-                err_code = DFU_WriteChunk(p_chunk);
-                require_noerr(err_code, err_handler);
-
-                // Success, move on to the next chunk
-                break;
-            }
-        }
+        err_code = _handle_chunk();
+        require_noerr(err_code, err_handler);
     }
-
     //////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////

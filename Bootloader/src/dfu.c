@@ -161,6 +161,10 @@ ret_code_t DFU_WriteChunk(DFU_ChunkMsg_t *chunk)
         return NRF_ERROR_INVALID_STATE;
     }
 
+    static uint8_t write_buff[DFU_CHUNK_SIZE];
+
+    memcpy( write_buff, chunk->chunk_data, MAX(chunk->chunk_num_bytes, DFU_CHUNK_SIZE) );
+
     ret_code_t err_code;
 
     // Calculate the address of the chunk
@@ -172,7 +176,7 @@ ret_code_t DFU_WriteChunk(DFU_ChunkMsg_t *chunk)
     // Write the chunk to flash
     err_code = nrf_fstorage_write( &g_app_code_fstorage,
                                    chunk_addr,
-                                   chunk->chunk_data,
+                                   write_buff,
                                    num_bytes_to_write,
                                    NULL);
     require_noerr(err_code, exit);
