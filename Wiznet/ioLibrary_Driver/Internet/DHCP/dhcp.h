@@ -55,7 +55,7 @@
 
 /* Retry to processing DHCP */
 #define	MAX_DHCP_RETRY          2        ///< Maxium retry count
-#define	DHCP_WAIT_TIME          10       ///< Wait Time 10s
+#define	DHCP_WAIT_TIME          3       ///< Wait Time 3s
 
 
 /* UDP port numbers for DHCP */
