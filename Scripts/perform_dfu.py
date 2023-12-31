@@ -27,7 +27,7 @@ from server_code.server.mqtt_client import MqttClient
 from server_code.server.gl_conf import GL_CONF
 
 MAX_CHUNK_RETRIES = 10
-CHUNK_RETRY_DELAY = 0.5 # seconds
+CHUNK_RETRY_DELAY = 0.25 # seconds
 
 # Sequence diagram:
 #
@@ -187,6 +187,8 @@ def cli(anchor_id: int, img_path: str, update_config: bool, skip_req: bool) -> N
                                         img_num_bytes = len(img_bytes),
                                         update_config_data = update_config )
         conn.sendall( bytes(metadata_msg) )
+
+        print( len(img_bytes))
 
         print(f"Sent METADATA: {img_num_chunks} chunks")
         ############################################################################

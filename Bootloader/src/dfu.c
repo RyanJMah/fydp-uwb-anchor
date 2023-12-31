@@ -118,36 +118,32 @@ ret_code_t DFU_ValidateImage(DFU_MetadataMsg_t* p_metadata, bool* out_ok)
     ret_code_t err_code;
     bool ok = false;
 
-    // Needs to be enough stack for this buffer...
-    uint8_t buf[1024];
-
-    uint32_t crc32 = 0xFFFFFFFF;
-    int32_t num_bytes_left = p_metadata->img_num_bytes;
+    static uint8_t buf[DFU_CHUNK_SIZE];
 
     // Calculate the CRC32 of the image
-    while ( num_bytes_left )
+    uint32_t crc32 = 0;
+
+    for (uint32_t i = 0; i < p_metadata->img_num_chunks; i++)
     {
-        int32_t offset = p_metadata->img_num_bytes - num_bytes_left;
-        require(offset >= 0, exit);
+        // Read the chunk from flash
 
-        uint32_t bytes_to_read = MIN(sizeof(buf), num_bytes_left);
 
-        // Read a chunk of the image
         err_code = nrf_fstorage_read( &g_app_code_fstorage,
-                                      FLASH_APP_START_ADDR + offset,
+                                      FLASH_APP_START_ADDR + i*DFU_CHUNK_SIZE,
                                       buf,
-                                      bytes_to_read );
+                                      sizeof(buf) );
         require_noerr(err_code, exit);
 
         // Calculate the CRC32 of the chunk
         crc32 = crc32_compute( buf,
-                               bytes_to_read,
+                               sizeof(buf),
                                &crc32 );
-
-        num_bytes_left -= bytes_to_read;
     }
 
     ok = (crc32 == p_metadata->img_crc);
+
+    GL_LOG("Calculated CRC32: 0x%08X\n", crc32);
+    GL_LOG("Received CRC32:   0x%08X\n", p_metadata->img_crc);
 
 exit:
     *out_ok = ok;
@@ -171,7 +167,11 @@ ret_code_t DFU_WriteChunk(DFU_ChunkMsg_t *chunk)
     uint32_t chunk_addr = FLASH_APP_START_ADDR + (chunk->chunk_num * DFU_CHUNK_SIZE);
 
     // Needs to be aligned to 4 bytes
-    uint32_t num_bytes_to_write = chunk->chunk_num_bytes + (4 - (chunk->chunk_num_bytes % 4));
+    uint32_t num_bytes_to_write = chunk->chunk_num_bytes;
+    if ( (num_bytes_to_write % 4) != 0 )
+    {
+        num_bytes_to_write += 4 - (chunk->chunk_num_bytes % 4);
+    }
 
     // Write the chunk to flash
     err_code = nrf_fstorage_write( &g_app_code_fstorage,

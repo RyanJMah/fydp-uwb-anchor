@@ -301,8 +301,9 @@ int main(void)
     err_code = FlashConfigData_Deinit();
     require_noerr(err_code, err_handler);
 
-    GL_LOG("Jumping to app...\n");
-    DFU_JumpToApp();
+    // Jump to application code
+    GL_LOG("Rebooting...\n");
+    NVIC_SystemReset();
     //////////////////////////////////////////////////////////////////////////////////////////////////////
 
 err_handler:
