@@ -1,5 +1,7 @@
 #include "gl_error.h"
+#include "macros.h"
 #include "nrf_delay.h"
+#include "nrf_error.h"
 #include "nrf_sdm.h"
 #include "nrf_bootloader_info.h"
 
@@ -8,19 +10,19 @@
 #include "dfu.h"
 #include "dfu_messages.h"
 #include "flash_config_data.h"
+#include "sdk_errors.h"
+#include <stdint.h>
 
 /*************************************************************
  * GLOBAL VARIABLES
  ************************************************************/
 // The chunk message is the largest message in the protocol
-static uint8_t g_rx_buf[ sizeof(DFU_ChunkMsg_t) ];
-
-static uint32_t g_fw_up_retries = 0;
+static uint8_t g_rx_buf[ sizeof(DFU_ChunkMsg_t) ] __attribute__((aligned(4)));
 
 /*************************************************************
  * PRIVATE FUNCTIONS
  ************************************************************/
-static int32_t _nack_chunk(DFU_ChunkMsg_t* chunk)
+static int32_t _nack_chunk(void)
 {
     DFU_OkMsg_t nack =
     {
@@ -35,6 +37,41 @@ exit:
     return sock_err_code;
 }
 
+static int32_t _ack_chunk(void)
+{
+    DFU_OkMsg_t ack =
+    {
+        .msg_type = DFU_MSG_TYPE_OK,
+        .ok       = 1
+    };
+
+    int sock_err_code = LAN_Send(DFU_SOCK_NUM, (uint8_t*)&ack, sizeof(ack));
+    require(sock_err_code > 0, exit);
+
+exit:
+    return sock_err_code;
+}
+
+static int32_t _recieve_chunk(void)
+{
+    int32_t sock_err_code = 0;
+    int32_t bytes_received = 0;
+
+    while ( bytes_received < sizeof(DFU_ChunkMsg_t) )
+    {
+        sock_err_code = LAN_Recv( DFU_SOCK_NUM,
+                                  g_rx_buf + bytes_received,
+                                  sizeof(g_rx_buf) - bytes_received );
+        require(sock_err_code > 0, exit);
+
+        bytes_received += sock_err_code;
+
+        GL_LOG("Received %d bytes, %d remaining...\n", sock_err_code, sizeof(DFU_ChunkMsg_t) - bytes_received);
+    }
+
+exit:
+    return sock_err_code;
+}
 
 /*************************************************************
  * MAIN
@@ -61,15 +98,14 @@ int main(void)
 
     // If we're here, the fw_update_pending flag is set, start DFU
 
-retry_fw_update:
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     // Connect to DFU server
     LAN_Init( NULL );
 
     GL_LOG("Connecting to dfu server...\n");
 
-    ret_code_t err_code;
-    int        sock_err_code;
+    ret_code_t err_code      = NRF_SUCCESS;
+    int        sock_err_code = 0;
 
     // Find a server to connect to
     for (uint8_t i = 0; i < NUM_FALLBACK_SERVERS; i++)
@@ -110,7 +146,7 @@ retry_fw_update:
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     // Send READY message
     {
-        GL_LOG("Sending REQ...\n");
+        GL_LOG("Sending READY...\n");
 
         DFU_ReadyMsg_t msg =
         {
@@ -156,23 +192,39 @@ retry_fw_update:
 
     for (uint32_t i = 0; i < metadata.img_num_chunks; i++)
     {
-    start_chunk:
-        GL_LOG("Waiting for CHUNK %d...\n", i);
-
-        sock_err_code = LAN_Recv(DFU_SOCK_NUM, g_rx_buf, sizeof(g_rx_buf));
-        require(sock_err_code > 0, err_handler);
-
-        DFU_ChunkMsg_t* p_chunk = (DFU_ChunkMsg_t*)g_rx_buf;
-
-        if ( (p_chunk->msg_type != DFU_MSG_TYPE_CHUNK) ||
-             !DFU_ValidateChunk(p_chunk) )
+        while ( num_retries++ <= DFU_MAX_NUM_RETRIES )
         {
-            // NACK the chunk, server will retry
-            _nack_chunk(p_chunk);
+            GL_LOG("Waiting for CHUNK %d...\n", i);
 
-            if ( num_retries++ > DFU_MAX_NUM_RETRIES )
+            sock_err_code = _recieve_chunk();
+            require(sock_err_code > 0, err_handler);
+
+            DFU_ChunkMsg_t* p_chunk = (DFU_ChunkMsg_t*)g_rx_buf;
+
+            if ( p_chunk->msg_type != DFU_MSG_TYPE_CHUNK )
             {
-                goto start_chunk;
+                GL_LOG("Received unexpected message type %d, retrying...\n", p_chunk->msg_type);
+
+                _nack_chunk();
+                continue;
+            }
+            else if ( !DFU_ValidateChunk(p_chunk) )
+            {
+                GL_LOG("Chunk CRC doesn't match, retrying...\n");
+
+                _nack_chunk();
+                continue;
+            }
+            else // Chunk is good
+            {
+                _ack_chunk();
+
+                // Write the chunk to flash
+                err_code = DFU_WriteChunk(p_chunk);
+                require_noerr(err_code, err_handler);
+
+                // Success, move on to the next chunk
+                break;
             }
         }
     }
@@ -190,15 +242,8 @@ retry_fw_update:
 
     if ( !img_is_good )
     {
-        GL_LOG("Image is bad, retrying...\n");
-
-        if ( g_fw_up_retries++ > DFU_MAX_NUM_RETRIES )
-        {
-            GL_LOG("Too many retries, aborting...\n");
-            goto err_handler;
-        }
-
-        goto retry_fw_update;
+        GL_LOG("Image is bad!!!!\n");
+        goto err_handler;
     }
 
     GL_LOG("Image is good!\n");
@@ -227,6 +272,12 @@ retry_fw_update:
     // LAN_Init() resets the ethernet chip via the reset pin, so no need to deinit here
 
     err_code = DFU_Deinit();
+    require_noerr(err_code, err_handler);
+
+    // Clear the fw_update_pending flag
+    gp_persistent_conf->fw_update_pending = 0;
+
+    err_code = FlashConfigData_WriteBack();
     require_noerr(err_code, err_handler);
 
     err_code = FlashConfigData_Deinit();

@@ -163,6 +163,8 @@ def cli(anchor_id: int, img_path: str, update_config: bool, skip_req: bool) -> N
 
         ready_msg: DFU_ReadyMsg = DFU_ReadyMsg.from_buffer_copy(received)
         assert(ready_msg.msg_type == DFU_MSG_TYPE_READY)
+
+        print("Received READY")
         ############################################################################
 
         ############################################################################
@@ -176,6 +178,8 @@ def cli(anchor_id: int, img_path: str, update_config: bool, skip_req: bool) -> N
                                         img_num_bytes = len(img_bytes),
                                         update_config_data = update_config )
         conn.sendall( bytes(metadata_msg) )
+
+        print(f"Sent METADATA: {img_num_chunks} chunks")
         ############################################################################
 
         ############################################################################
@@ -184,6 +188,8 @@ def cli(anchor_id: int, img_path: str, update_config: bool, skip_req: bool) -> N
 
         begin_msg: DFU_BeginMsg = DFU_BeginMsg.from_buffer_copy(received)
         assert(begin_msg.msg_type == DFU_MSG_TYPE_BEGIN)
+
+        print("Received BEGIN")
         ############################################################################
 
         ############################################################################
@@ -203,6 +209,7 @@ def cli(anchor_id: int, img_path: str, update_config: bool, skip_req: bool) -> N
             chunk_msg.chunk_crc32 = calc_crc32( bytes(chunk_msg)[:-4] )
 
             conn.sendall( bytes(chunk_msg) )
+            print(f"Sent CHUNK {i}, CRC = {chunk_msg.chunk_crc32:08X}")
 
             ###########################################################
             # OK MESSAGE
@@ -212,6 +219,8 @@ def cli(anchor_id: int, img_path: str, update_config: bool, skip_req: bool) -> N
             assert(ok_msg.msg_type == DFU_MSG_TYPE_OK)
             ###########################################################
 
+            print(f"Received OK: {bool(ok_msg.ok)}")
+
             return bool(ok_msg.ok)
 
         ok = False
@@ -219,8 +228,8 @@ def cli(anchor_id: int, img_path: str, update_config: bool, skip_req: bool) -> N
             num_retries = 0
 
             while not ok:
-                ok = send_chunk(i)  # Keep sending the chunk until we get an OK back
-                
+                ok = send_chunk(i)  # Keep sending the chunk until we get an OK back                
+
                 if num_retries > MAX_CHUNK_RETRIES:
                     print("Too many retries, aborting...")
                     sys.exit(1)
