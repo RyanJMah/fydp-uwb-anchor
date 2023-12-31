@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include "macros.h"
 #include "custom_board.h"
+#include "app_timer.h"
 #include "nrf_delay.h"
 #include "nrf_drv_gpiote.h"
 #include "user_ethernet.h"
@@ -10,6 +11,7 @@
 #include "socket.h"
 #include "dhcp.h"
 #include "gl_log.h"
+#include "gl_error.h"
 #include "flash_config_data.h"
 #include "lan.h"
 
@@ -41,6 +43,8 @@ static uint16_t g_internal_port = 50000;
 static uint8_t g_dhcp_buf[DHCP_BUF_SIZE];
 
 static wiz_NetInfo g_net_info;
+
+APP_TIMER_DEF(g_dhcp_timer);
 
 #if NEEDS_MUTEX
 static osMutexDef(g_lan_mutex);     // Declare mutex
@@ -182,8 +186,16 @@ static ALWAYS_INLINE void _static_net_init(void)
     ctlnetwork(CN_SET_NETINFO, (void*)&g_net_info);
 }
 
+
+static void _DHCP_Time_Handler(void * p_context)
+{
+    DHCP_time_handler();
+}
+
 static ALWAYS_INLINE void _dhcp_net_init(void)
 {
+    ret_code_t err_code = NRF_SUCCESS;
+
     GL_LOG("Getting IP via DHCP...\n");
 
     // Initialize mac address from flash
@@ -195,6 +207,17 @@ static ALWAYS_INLINE void _dhcp_net_init(void)
 
     // Initialize DHCP
     DHCP_init( DHCP_SOCK_NUM, g_dhcp_buf );
+
+    // Initialize timer
+
+    err_code = app_timer_init();
+    require_noerr(err_code, exit);
+
+    err_code = app_timer_create(&g_dhcp_timer, APP_TIMER_MODE_REPEATED, _DHCP_Time_Handler);
+    require_noerr(err_code, exit);
+
+    err_code = app_timer_start(g_dhcp_timer, APP_TIMER_TICKS(1000), NULL);
+    require_noerr(err_code, exit);
 
     GL_LOG("DHCP INITIALIZED\n");
 
@@ -238,6 +261,13 @@ static ALWAYS_INLINE void _dhcp_net_init(void)
      * In the bootloader, we are gonna just get our IP address then dip.
      */
     DHCP_stop();
+
+exit:
+    if ( err_code != NRF_SUCCESS )
+    {
+        GL_LOG("FAILED TO INITIALIZE DHCP, err_code=%d\n", err_code);
+        GL_FATAL_ERROR();
+    }
 }
 
 /*************************************************************
@@ -265,7 +295,6 @@ void LAN_Init(nrfx_gpiote_evt_handler_t isr_func)
 
     if ( gp_persistent_conf->using_dhcp )
     {
-        nrf_delay_ms(5000);
         _dhcp_net_init();
     }
     else

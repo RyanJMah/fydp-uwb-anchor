@@ -415,8 +415,6 @@ void send_DHCP_DISCOVER(void)
         GL_LOG("ERROR: sendto() failed with status %d\r\n", status);
         GL_FATAL_ERROR();
     }
-    
-    GL_LOG("sendto ret code = %d\n", status);
 }
 
 /* SEND DHCP REQUEST */
