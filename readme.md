@@ -1,5 +1,3 @@
-# Anchor Application Code
-
 # Prerequisites
 
 1. Download version 5.68 of [SEGGER Embedded Studio for ARM](https://www.segger.com/downloads/embedded-studio/)
