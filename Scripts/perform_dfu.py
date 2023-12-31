@@ -18,7 +18,8 @@ from header_constants import (
     DFU_CHUNK_SIZE,
     DFU_SERVER_PORT,
     DFU_TOPIC_FMT,
-    FLASH_APP_SIZE
+    FLASH_APP_SIZE,
+    FLASH_PAGE_SIZE
 )
 from Calc_CRC32 import calc_crc32
 
@@ -26,7 +27,7 @@ from server_code.server.mqtt_client import MqttClient
 from server_code.server.gl_conf import GL_CONF
 
 MAX_CHUNK_RETRIES = 10
-CHUNK_RETRY_DELAY = 5 # seconds
+CHUNK_RETRY_DELAY = 0.5 # seconds
 
 # Sequence diagram:
 #
@@ -127,6 +128,9 @@ def cli(anchor_id: int, img_path: str, update_config: bool, skip_req: bool) -> N
     if len(img_bytes) > FLASH_APP_SIZE:
         print(f"ERROR: image is too large ({len(img_bytes)}, max size = {FLASH_APP_SIZE} bytes)")
         sys.exit(1)
+
+    # pad with 0xFF to make the img completely fill the last page
+    img_bytes += b"\xFF" * ( FLASH_PAGE_SIZE - (len(img_bytes) % FLASH_PAGE_SIZE) )
 
     if not skip_req:
         # The initial REQ message is sent to the anchor over MQTT, since
