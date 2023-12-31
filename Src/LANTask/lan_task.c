@@ -67,14 +67,38 @@ static void _send_heartbeat(const void* args UNUSED)
 static void _subscribe_callback( char* topic, uint32_t topic_len,
                                  uint8_t* payload, uint32_t payload_len )
 {
-    for (uint32_t i = 0; i < topic_len; i++)
+    if ( strncmp(topic, g_DFU_TOPIC, g_DFU_TOPIC_LEN) == 0 )
     {
-        GL_LOG("%c", topic[i]);
-    }
-    
-    for (uint32_t i = 0; i < payload_len; i++)
-    {
-        GL_LOG("%c", payload[i]);
+        GL_LOG("DFU REQUESTED!\n");
+
+        if ( payload_len != g_HARDCODED_DFU_PASSWD_LEN )
+        {
+            GL_LOG("DFU FAILED: WRONG PASSWORD LENGTH\n");
+            return;
+        }
+
+        if ( strncmp((char* )payload, g_HARDCODED_DFU_PASSWD, g_HARDCODED_DFU_PASSWD_LEN) != 0 )
+        {
+            GL_LOG("DFU FAILED: WRONG PASSWORD\n");
+            return;
+        }
+
+        GL_LOG("DFU SUCCESS!\n");
+
+        gp_persistent_conf->fw_update_pending = 1;
+
+        ret_code_t err_code = FlashConfigData_WriteBack();
+        if ( err_code != NRF_SUCCESS )
+        {
+            GL_LOG("FAILED TO WRITEBACK FLASH CONFIG DATA, err_code=%d\n", err_code);
+            GL_FATAL_ERROR();
+        }
+
+        FlashConfigData_Print();
+
+        // Reset the device
+        GL_LOG("Restarting into bootloader...\n");
+        NVIC_SystemReset();
     }
 }
 

@@ -27,7 +27,7 @@
  * This is bad, but python ctypes can't align to 32 bits on
  * a 64 bit machine, so we do it like this I guess...
  */
-typedef struct
+typedef struct __attribute__((aligned(4)))
 {
     FlashConfigData_t data;
     uint8_t           padding[PADDING_BYTES];

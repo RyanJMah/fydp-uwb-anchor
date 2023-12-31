@@ -23,6 +23,9 @@ uint8_t g_BASE_SELF_CONFIG_TOPIC_LEN;
 char    g_DFU_TOPIC[ sizeof(DFU_TOPIC_FMT) + 2 ];
 uint8_t g_DFU_TOPIC_LEN;
 
+char    g_HARDCODED_DFU_PASSWD[] = DFU_HARDCODED_PASSWD;
+uint8_t g_HARDCODED_DFU_PASSWD_LEN;
+
 
 void AppMqtt_Init(void)
 {
@@ -60,4 +63,6 @@ void AppMqtt_Init(void)
                                 sizeof(g_DFU_TOPIC),
                                 DFU_TOPIC_FMT,
                                 gp_persistent_conf->anchor_id );
+
+    g_HARDCODED_DFU_PASSWD_LEN = strlen(g_HARDCODED_DFU_PASSWD);
 }

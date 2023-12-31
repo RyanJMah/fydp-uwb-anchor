@@ -63,14 +63,6 @@ static void eventCallback( MQTTContext_t * pContext,
             g_sub_cb( (char* )pPublishInfo->pTopicName, pPublishInfo->topicNameLength,
                       (uint8_t* )pPublishInfo->pPayload, pPublishInfo->payloadLength );
         }
-
-        // for (uint32_t i = 0; i < pPublishInfo->payloadLength; i++)
-        // {
-        //     GL_LOG("%c", ((char*)pPublishInfo->pPayload)[i]);
-        // }
-        // GL_LOG("Received message on topic %.*s: %.*s\n",
-        //        (int)pPublishInfo->topicNameLength, pPublishInfo->pTopicName,
-        //        (int)pPublishInfo->payloadLength, (char*)pPublishInfo->pPayload);
     }
 }
 

@@ -15,7 +15,9 @@
 #define CONN_RESP_TOPIC_FMT         "gl/anchor/%u/conn/resp"
 #define NI_CONFIG_TOPIC_FMT         "gl/anchor/%u/conn/ni_config"
 #define BASE_SELF_CONFIG_TOPIC_FMT  "gl/anchor/%u/config"
+
 #define DFU_TOPIC_FMT               "gl/anchor/%u/dfu"
+#define DFU_HARDCODED_PASSWD        "guidinglite-69420" 
 
 /*************************************************************
  * GLOBAL VARIABLES
@@ -40,6 +42,10 @@ extern uint8_t g_BASE_SELF_CONFIG_TOPIC_LEN;
 
 extern char    g_DFU_TOPIC[];
 extern uint8_t g_DFU_TOPIC_LEN;
+
+extern char    g_HARDCODED_DFU_PASSWD[];
+extern uint8_t g_HARDCODED_DFU_PASSWD_LEN;
+
 
 /*************************************************************
 * TYPE DEFINITIONS

@@ -1,5 +1,5 @@
 {
-    "fw_update_pending": 1,
+    "fw_update_pending": 0,
 
     "socket_recv_timeout_ms": 5000,
 

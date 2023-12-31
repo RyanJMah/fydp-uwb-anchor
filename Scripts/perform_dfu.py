@@ -3,6 +3,7 @@ import time
 import socket
 import click
 import intelhex
+import paho.mqtt.client as mqtt
 from math import ceil
 from ctypes import LittleEndianStructure, c_uint32, c_uint8
 
@@ -20,12 +21,11 @@ from header_constants import (
     DFU_SERVER_PORT,
     DFU_TOPIC_FMT,
     FLASH_APP_SIZE,
-    FLASH_PAGE_SIZE
+    FLASH_PAGE_SIZE,
+    DFU_HARDCODED_PASSWD
 )
 from Calc_CRC32 import calc_crc32
 
-from server_code.server.mqtt_client import MqttClient
-from server_code.server.gl_conf import GL_CONF
 
 MAX_CHUNK_RETRIES = 10
 CHUNK_RETRY_DELAY = 0.25 # seconds
@@ -119,7 +119,9 @@ class DFU_ConfirmMsg(PackedStruct):
 @click.option("--img-path", type=click.Path(exists=True), required=True, help="The path to the image to be flashed")
 @click.option("--update-config", type=bool, default=False, help="Whether to update the anchor config data in flash")
 @click.option("--skip-req", type=bool, is_flag=True, default=False, help="Whether to skip sending the REQ message")
-def cli(anchor_id: int, img_path: str, update_config: bool, skip_req: bool) -> None:
+@click.option("--broker-addr", type=str, default="localhost", help="The address of the MQTT broker")
+@click.option("--broker-port", type=int, default=1883, help="The port of the MQTT broker")
+def cli(anchor_id: int, img_path: str, update_config: bool, skip_req: bool, broker_addr: str, broker_port: int) -> None:
     # Get a binary blog of the image
     img_bytes: bytes
 
@@ -147,17 +149,18 @@ def cli(anchor_id: int, img_path: str, update_config: bool, skip_req: bool) -> N
     img_bytes += b"\xFF" * ( FLASH_PAGE_SIZE - (len(img_bytes) % FLASH_PAGE_SIZE) )
 
     if not skip_req:
-        # The initial REQ message is sent to the anchor over MQTT, since
-        # it would have been running the app code at this point.
-        mqtt_client = MqttClient()
-
-        mqtt_client.connect(GL_CONF.broker_address, GL_CONF.broker_port)
-        mqtt_client.run_mainloop()
-
         ############################################################################
         # REQ MESSAGE
-        req_msg = DFU_RequestMsg(msg_type = DFU_MSG_TYPE_REQ)
-        mqtt_client.publish( DFU_TOPIC_FMT % anchor_id, bytes(req_msg) )
+
+        # The initial REQ message is sent to the anchor over MQTT, since
+        # it would have been running the app code at this point.
+
+        client = mqtt.Client()
+
+        client.connect(broker_addr, broker_port)
+        client.loop_start()
+
+        client.publish( DFU_TOPIC_FMT % anchor_id, payload=DFU_HARDCODED_PASSWD.encode() )
         ############################################################################
 
     # The READY message is sent by the bootloader over TCP
@@ -175,7 +178,7 @@ def cli(anchor_id: int, img_path: str, update_config: bool, skip_req: bool) -> N
 
     if not skip_req:
         # We can stop the mqtt client now, it won't be needed anymore
-        mqtt_client.stop_mainloop()
+        client.loop_stop()
 
     with conn:
         received: bytes
