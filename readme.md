@@ -13,6 +13,10 @@
 python3 -m pip install -r ./Scripts/requirements.txt
 ```
 
+```bash
+git submodule update --init --recursive
+```
+
 # Quickstart
 
 TLDR: run `make help`
