@@ -27,20 +27,27 @@
  * MACROS
  ************************************************************/
 // Bootloader is baremetal, so doesn't need mutex
-#define NEEDS_MUTEX             ( !defined(GL_BOOTLOADER) )
+#define NEEDS_MUTEX                     ( !defined(GL_BOOTLOADER) )
 
 #if NEEDS_MUTEX
-#define MUTEX_WAIT_TIMEOUT_MS   ( 500 )
+#define MUTEX_WAIT_TIMEOUT_MS           ( 500 )
 #endif
 
-#define DHCP_BUF_SIZE           ( 1024*2 )
+// timeout value = 10ms
+#define DEFAULT_TIMEOUT_RETRY_CNT       ( 5 )    
+#define DEFAULT_TIMEOUT_TIME_100US      ( 1000 )	
+
+#define RECV_BUF_SIZE                   ( 1024*2 )
+
+#define MDNS_PORT                       ( 5353 )
+#define MDNS_ADDR                       { 224, 0, 0, 251 }
 
 /*************************************************************
  * PRIVATE VARIABLES
  ************************************************************/
 static uint16_t g_internal_port = 50000;
 
-static uint8_t g_dhcp_buf[DHCP_BUF_SIZE];
+static __attribute__((aligned(4))) uint8_t g_recv_buf[RECV_BUF_SIZE];
 
 static wiz_NetInfo g_net_info;
 
@@ -52,6 +59,42 @@ APP_TIMER_DEF(g_dhcp_timer);
 static osMutexDef(g_lan_mutex);     // Declare mutex
 static osMutexId (g_lan_mutex_id);  // Mutex ID
 #endif
+
+static uint8_t g_mdns_addr[] = MDNS_ADDR;
+
+static uint8_t g_hardcoded_mdns_pkt[] = {
+    0x01, 0x02,
+    0x00, 0x00,
+    0x00, 0x01,
+    0x00, 0x00,
+    0x00, 0x00,
+    0x00, 0x00,
+    0x0c, 'G', 'u', 'i', 'd', 'i', 'n', 'g', 'L', 'i', 'g', 'h', 't',
+    0x05, '_', 'm', 'q', 't', 't',
+    0x04, '_', 't', 'c', 'p',
+    0x05, 'l', 'o', 'c', 'a', 'l', 0x00,
+    0x00, 0x01,
+    0x00, 0x01,
+    // 0x00
+};
+
+// static uint8_t g_hardcoded_mdns_pkt[] =
+// {
+//     0x60, 0xa6,
+//     // 0x00, 0x00,
+//     0x00, 0x00,
+//     0x00, 0x01,
+//     0x00, 0x00,
+//     0x00, 0x00,
+//     0x00, 0x00,
+//     0x0c, 'G', 'u', 'i', 'd', 'i', 'n', 'g', 'L', 'i', 'g', 'h', 't',
+//     0x05, '_', 'm', 'q', 't', 't',
+//     0x04, '_', 't', 'c', 'p',
+//     0x05, 'l', 'o', 'c', 'a', 'l', '\0',
+//     0x00, 0x01,
+//     0x00, 0x01,
+//     // 0x00
+// };
 
 /*************************************************************
  * PRIVATE FUNCTIONS
@@ -90,6 +133,17 @@ static ALWAYS_INLINE void _reset_via_reset_pin(void)
 static ALWAYS_INLINE void _deinit_reset_pin(void)
 {
     nrf_drv_gpiote_out_uninit(W5500_RESET_PIN);
+}
+
+static inline void _set_timeout(uint8_t retry_cnt, uint16_t time_100us)
+{
+    wiz_NetTimeout timeout_info =
+    {
+        .retry_cnt = retry_cnt,
+        .time_100us = time_100us
+    };
+    wizchip_settimeout(&timeout_info);
+
 }
 
 static ALWAYS_INLINE void _init_interrupts(nrfx_gpiote_evt_handler_t isr_func)
@@ -209,7 +263,7 @@ static ALWAYS_INLINE void _dhcp_net_init(void)
     ctlnetwork(CN_SET_NETINFO, (void*)&g_net_info);
 
     // Initialize DHCP
-    DHCP_init( DHCP_SOCK_NUM, g_dhcp_buf );
+    DHCP_init( DHCP_SOCK_NUM, g_recv_buf );
 
     // Initialize timer
 
@@ -313,6 +367,8 @@ void LAN_Init(nrfx_gpiote_evt_handler_t isr_func)
     spi1_master_init();
     user_ethernet_init();
 
+    _set_timeout(DEFAULT_TIMEOUT_RETRY_CNT, DEFAULT_TIMEOUT_TIME_100US);
+
     if ( gp_persistent_conf->using_dhcp )
     {
         _dhcp_net_init();
@@ -330,6 +386,82 @@ void LAN_Init(nrfx_gpiote_evt_handler_t isr_func)
     _print_net_info();
 
     GL_LOG("Ethernet initialized!\n");
+}
+
+int16_t LAN_GetServerIPViaMDNS(hostname_t hostname, ipv4_addr_t* out_addr)
+{
+    int16_t err_code;
+
+    #if NEEDS_MUTEX
+    bool mutex_taken = _take_mutex();
+    #endif
+
+    GL_LOG("creating mdns socket...\n");
+
+    // Needed for multicast sockets, set the multicast addr and port
+    setSn_DIPR(MDNS_SOCK_NUM, g_mdns_addr);
+    setSn_DPORT(MDNS_SOCK_NUM, MDNS_PORT);
+
+    err_code = socket( MDNS_SOCK_NUM, Sn_MR_UDP, MDNS_PORT, SF_MULTI_ENABLE | SF_IGMP_VER2 );
+    require( err_code == MDNS_SOCK_NUM, exit );
+
+    GL_LOG("sending mDNS packet...\n");
+
+
+    err_code = sendto( MDNS_SOCK_NUM,
+                       g_hardcoded_mdns_pkt,
+                       sizeof(g_hardcoded_mdns_pkt),
+                       g_mdns_addr,
+                       MDNS_PORT );
+    require( err_code > 0, exit );
+
+    GL_LOG("waiting for response...\n");
+
+    uint8_t  dst_ip[4];
+    uint16_t dst_port;
+
+    // THIS IS SO BAD
+    // nrf_delay_ms(1000);
+
+    // while ( getSn_RX_RSR(MDNS_SOCK_NUM) == 0 )
+    // {
+    //     // wait for response
+    // }
+
+    // if ( getSn_RX_RSR(MDNS_SOCK_NUM) == 0 )
+    // {
+    //     GL_LOG("no response received\n");
+
+    //     err_code = SOCKERR_TIMEOUT;
+    //     goto exit;
+    // }
+
+    err_code = recvfrom( MDNS_SOCK_NUM,
+                         g_recv_buf,
+                         RECV_BUF_SIZE,
+                         &dst_ip[0],
+                         &dst_port );
+    require( err_code > 0, exit );
+
+    memcpy( out_addr->bytes, dst_ip, sizeof(dst_ip) );
+
+    err_code = close( MDNS_SOCK_NUM );
+    require( err_code > 0, exit );
+
+exit:
+    #if NEEDS_MUTEX
+    if ( mutex_taken )
+    {
+        _release_mutex();
+    }
+    #endif
+
+    if ( err_code < 0 )
+    {
+        GL_LOG("sock_err_code = %d\n", err_code);
+    }
+
+    return err_code;
 }
 
 int16_t LAN_Connect(sock_t sock, ipv4_addr_t addr, uint16_t port)

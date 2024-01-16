@@ -158,6 +158,37 @@ int main(void)
     int        sock_err_code = 0;
 
     // Find a server to connect to
+
+    // Try mDNS first
+    for (uint8_t i = 0; i < NUM_FALLBACK_SERVERS; i++)
+    {
+        if ( Port_IsInvalid(gp_persistent_conf->server_port[i]) ||
+             Hostname_IsInvalid(gp_persistent_conf->server_hostname[i]) )
+        {
+            continue;
+        }
+
+        ipv4_addr_t mdns_addr;
+        sock_err_code = LAN_GetServerIPViaMDNS(gp_persistent_conf->server_hostname[i], &mdns_addr);
+
+        if ( sock_err_code <= 0 )
+        {
+            GL_LOG("Failed to resolve hostname %d, trying next...\n", i);
+            continue;
+        }
+
+        sock_err_code = LAN_Connect(DFU_SOCK_NUM, mdns_addr, DFU_SERVER_PORT);
+
+        if ( sock_err_code > 0 )
+        {
+            // Success
+            goto server_connected;
+        }
+
+        GL_LOG("Failed to connect to server %d, trying next...\n", i);
+    }
+
+    // Try raw IP addresses if mDNS fails
     for (uint8_t i = 0; i < NUM_FALLBACK_SERVERS; i++)
     {
         if ( Port_IsInvalid(gp_persistent_conf->server_port[i]) ||
@@ -166,12 +197,12 @@ int main(void)
             continue;
         }
 
-        sock_err_code = LAN_Connect(DFU_SOCK_NUM, gp_persistent_conf->server_ip_addr[i], 6900);
+        sock_err_code = LAN_Connect(DFU_SOCK_NUM, gp_persistent_conf->server_ip_addr[i], DFU_SERVER_PORT);
 
         if ( sock_err_code > 0 )
         {
             // Success
-            break;
+            goto server_connected;
         }
 
         GL_LOG("Failed to connect to server %d, trying next...\n", i);
@@ -182,10 +213,12 @@ int main(void)
         GL_LOG("Failed to connect to any server, aborting...\n");
         goto err_handler;
     }
+
     //////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     // Init DFU
+server_connected:
     err_code = DFU_Init();
     require_noerr(err_code, err_handler);
     //////////////////////////////////////////////////////////////////////////////////////////////////////

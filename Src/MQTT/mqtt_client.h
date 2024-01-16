@@ -39,10 +39,9 @@ typedef void ( *MqttClient_SubscribeCallback_t )( char* topic, uint32_t topic_le
 /*************************************************************
  * PRIVATE FUNCTIONS
  ************************************************************/
-int16_t TransportInterface_Init(
-                        TransportInterface_t* interface,
-                        ipv4_addr_t broker_addr,
-                        uint32_t    broker_port );
+int16_t TransportInterface_Init( TransportInterface_t* interface,
+                                 ipv4_addr_t broker_addr,
+                                 uint32_t    broker_port );
 
 /*************************************************************
  * PUBLIC FUNCTIONS

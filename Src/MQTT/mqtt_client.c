@@ -80,10 +80,19 @@ MqttRetCode_t MqttClient_Init(void)
     // TODO: Try all the fallback servers in case of failure.
 
     // Initialize transport interface...
-    sock_err_code = TransportInterface_Init( &g_transport,
-                                              gp_persistent_conf->server_ip_addr[0],
-                                              gp_persistent_conf->server_port[0] );
-    require_action( sock_err_code > 0, exit, err_code = MQTT_SOCK_INTERNAL_ERR );
+    for (uint8_t i = 0; i < NUM_FALLBACK_SERVERS; i++)
+    {
+        if ( Port_IsInvalid(gp_persistent_conf->server_port[i]) ||
+             IPAddr_IsInvalid(gp_persistent_conf->server_ip_addr[i]) )
+        {
+            continue;
+        }
+
+        sock_err_code = TransportInterface_Init( &g_transport,
+                                                 gp_persistent_conf->server_ip_addr[i],
+                                                 gp_persistent_conf->server_port[i] );
+        require_action( sock_err_code > 0, exit, err_code = MQTT_SOCK_INTERNAL_ERR );
+    }
 
     // Set buffer members.
     g_fixed_buffer.pBuffer = g_buffer;
