@@ -1,6 +1,9 @@
 #include <string.h>
+#include <stdbool.h>
+
 #include "core_mqtt_serializer.h"
 #include "gl_log.h"
+#include "lan.h"
 #include "macros.h"
 #include "cmsis_os.h"
 #include "core_mqtt.h"
@@ -66,6 +69,91 @@ static void eventCallback( MQTTContext_t * pContext,
     }
 }
 
+static bool _try_init_via_mdns(void)
+{
+    int16_t sock_err_code = 0;
+
+    for (uint8_t i = 0; i < NUM_FALLBACK_SERVERS; i++)
+    {
+        if ( Port_IsInvalid(gp_persistent_conf->server_port[i]) ||
+             Hostname_IsInvalid(gp_persistent_conf->server_hostname[i]) )
+        {
+            continue;
+        }
+
+        ipv4_addr_t mdns_addr;
+        sock_err_code = LAN_GetServerIPViaMDNS( gp_persistent_conf->server_hostname[i], &mdns_addr );
+
+        if (sock_err_code <= 0)
+        {
+            // Try again
+            GL_LOG("Failed to resolve MQTT broker hostname %s, trying next...\n",
+                   gp_persistent_conf->server_hostname[i].c );
+
+            continue;
+        }
+
+
+        sock_err_code = TransportInterface_Init( &g_transport,
+                                                 mdns_addr,
+                                                 gp_persistent_conf->server_port[i] );
+        if (sock_err_code > 0)
+        {
+            return 1;
+        }
+        else
+        {
+            // Try again
+            GL_LOG("Failed to connect to MQTT broker at %d.%d.%d.%d:%d, trying next...\n",
+                   gp_persistent_conf->server_ip_addr[i].bytes[0],
+                   gp_persistent_conf->server_ip_addr[i].bytes[1],
+                   gp_persistent_conf->server_ip_addr[i].bytes[2],
+                   gp_persistent_conf->server_ip_addr[i].bytes[3],
+                   gp_persistent_conf->server_port[i] );
+
+            continue;
+        }
+    }
+
+    return 0;
+}
+
+static bool _try_init_via_raw_ip(void)
+{
+    int16_t sock_err_code = 0;
+
+    for (uint8_t i = 0; i < NUM_FALLBACK_SERVERS; i++)
+    {
+        if ( Port_IsInvalid(gp_persistent_conf->server_port[i]) ||
+             IPAddr_IsInvalid(gp_persistent_conf->server_ip_addr[i]) )
+        {
+            continue;
+        }
+
+        sock_err_code = TransportInterface_Init( &g_transport,
+                                                 gp_persistent_conf->server_ip_addr[i],
+                                                 gp_persistent_conf->server_port[i] );
+        if (sock_err_code > 0)
+        {
+            return 1;
+        }
+        else
+        {
+            // Try again
+            GL_LOG("Failed to connect to MQTT broker at %d.%d.%d.%d:%d, trying next...\n",
+                   gp_persistent_conf->server_ip_addr[i].bytes[0],
+                   gp_persistent_conf->server_ip_addr[i].bytes[1],
+                   gp_persistent_conf->server_ip_addr[i].bytes[2],
+                   gp_persistent_conf->server_ip_addr[i].bytes[3],
+                   gp_persistent_conf->server_port[i] );
+
+            continue;
+        }
+    }
+
+    return 0;
+}
+
 /*************************************************************
  * PUBLIC FUNCTIONS
  ************************************************************/
@@ -80,10 +168,21 @@ MqttRetCode_t MqttClient_Init(void)
     // TODO: Try all the fallback servers in case of failure.
 
     // Initialize transport interface...
-    sock_err_code = TransportInterface_Init( &g_transport,
-                                              gp_persistent_conf->server_ip_addr[0],
-                                              gp_persistent_conf->server_port[0] );
-    require_action( sock_err_code > 0, exit, err_code = MQTT_SOCK_INTERNAL_ERR );
+
+    // Try via mdns first
+    if ( !_try_init_via_mdns() )
+    {
+        // if that fails, try via raw ip
+        if ( !_try_init_via_raw_ip() )
+        {
+            GL_LOG("Failed to connect to MQTT broker, all fallback servers failed...\n");
+
+            err_code = MQTT_SOCK_INTERNAL_ERR;
+            sock_err_code = SOCKERR_TIMEOUT;
+
+            goto exit;
+        }
+    }
 
     // Set buffer members.
     g_fixed_buffer.pBuffer = g_buffer;
@@ -138,6 +237,13 @@ MqttRetCode_t MqttClient_Init(void)
     GL_LOG("Successfully connected to MQTT broker...\n");
 
 exit:
+    if (err_code != MQTT_OK)
+    {
+        GL_LOG( "Failed to connect to MQTT broker, error code: %d, sock_err_code: %d\n",
+                err_code,
+                sock_err_code );
+    }
+
     return err_code;
 }
 

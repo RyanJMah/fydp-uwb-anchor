@@ -68,11 +68,10 @@ void user_ethernet_init(void)
     }
     while(tmp == PHY_LINK_OFF);
 
-
-	wiz_NetTimeout timeout_info =
+    wiz_NetTimeout timeout_info =
     {
         .retry_cnt = 5,
-        .time_100us = 1000,	// timeout value = 10ms
+        .time_100us = 1000
     };
     wizchip_settimeout(&timeout_info);
 }

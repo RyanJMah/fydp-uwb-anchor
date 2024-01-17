@@ -27,31 +27,41 @@
  * MACROS
  ************************************************************/
 // Bootloader is baremetal, so doesn't need mutex
-#define NEEDS_MUTEX             ( !defined(GL_BOOTLOADER) )
+#define NEEDS_MUTEX                     ( !defined(GL_BOOTLOADER) )
 
 #if NEEDS_MUTEX
-#define MUTEX_WAIT_TIMEOUT_MS   ( 500 )
+#define MUTEX_WAIT_TIMEOUT_MS           ( 500 )
 #endif
 
-#define DHCP_BUF_SIZE           ( 1024*2 )
+#define RECV_BUF_SIZE                   ( 1024*2 )
+
+#define MDNS_PKT_BUF_SIZE               ( 512 )
+#define MDNS_PORT                       ( 5353 )
+#define MDNS_ADDR                       { 224, 0, 0, 251 }
+#define MULTICAST_MAC_ADDR              { 0x01, 0x00, 0x5e, 0x00, 0x00, 0xfb }
+
+// in microseconds
+#define TWO_SECONDS                     ( 2000000 )
 
 /*************************************************************
  * PRIVATE VARIABLES
  ************************************************************/
 static uint16_t g_internal_port = 50000;
 
-static uint8_t g_dhcp_buf[DHCP_BUF_SIZE];
+static __attribute__((aligned(4))) uint8_t g_recv_buf[RECV_BUF_SIZE];
 
 static wiz_NetInfo g_net_info;
-
-#ifndef GL_BOOTLOADER
-APP_TIMER_DEF(g_dhcp_timer);
-#endif
 
 #if NEEDS_MUTEX
 static osMutexDef(g_lan_mutex);     // Declare mutex
 static osMutexId (g_lan_mutex_id);  // Mutex ID
 #endif
+
+static uint8_t g_mdns_pkt_buf[MDNS_PKT_BUF_SIZE];
+
+static uint8_t g_mdns_addr[]          = MDNS_ADDR;
+static uint8_t g_multicast_mac_addr[] = MULTICAST_MAC_ADDR;
+
 
 /*************************************************************
  * PRIVATE FUNCTIONS
@@ -90,6 +100,34 @@ static ALWAYS_INLINE void _reset_via_reset_pin(void)
 static ALWAYS_INLINE void _deinit_reset_pin(void)
 {
     nrf_drv_gpiote_out_uninit(W5500_RESET_PIN);
+}
+
+static void _timeout_timer_start(void)
+{
+    // Configure Timer1
+    NRF_TIMER1->TASKS_STOP  = 1;
+    NRF_TIMER1->TASKS_CLEAR = 1;
+
+    NRF_TIMER1->MODE = TIMER_MODE_MODE_Timer;  // Set Timer mode
+    NRF_TIMER1->PRESCALER = 4;  // Set prescaler (16MHz / 2^4 = 1MHz)
+    NRF_TIMER1->BITMODE = TIMER_BITMODE_BITMODE_32Bit;  // Set 32-bit mode
+
+    NRF_TIMER1->INTENCLR = (0x3F << 16U);  /* disabling all interupts for Timer 1*/
+
+    // Start the timer
+    NRF_TIMER1->TASKS_START = 1;
+}
+
+static void _timeout_timer_stop(void)
+{
+    NRF_TIMER1->TASKS_STOP  = 1;
+    NRF_TIMER1->TASKS_CLEAR = 1;
+}
+
+static uint32_t _timeout_timer_get_us(void)
+{
+    NRF_TIMER1->TASKS_CAPTURE[0] = 1;
+    return NRF_TIMER1->CC[0];
 }
 
 static ALWAYS_INLINE void _init_interrupts(nrfx_gpiote_evt_handler_t isr_func)
@@ -188,13 +226,6 @@ static ALWAYS_INLINE void _static_net_init(void)
     ctlnetwork(CN_SET_NETINFO, (void*)&g_net_info);
 }
 
-#ifndef GL_BOOTLOADER
-static void _DHCP_Time_Handler(void * p_context)
-{
-    DHCP_time_handler();
-}
-#endif
-
 static ALWAYS_INLINE void _dhcp_net_init(void)
 {
     int8_t ret_code = DHCP_FAILED;
@@ -209,23 +240,10 @@ static ALWAYS_INLINE void _dhcp_net_init(void)
     ctlnetwork(CN_SET_NETINFO, (void*)&g_net_info);
 
     // Initialize DHCP
-    DHCP_init( DHCP_SOCK_NUM, g_dhcp_buf );
+    DHCP_init( DHCP_SOCK_NUM, g_recv_buf );
 
-    // Initialize timer
 
-#ifndef GL_BOOTLOADER
-    ret_code_t err_code = NRF_SUCCESS;
-
-    err_code = app_timer_init();
-    GL_ERROR_CHECK(err_code);
-
-    err_code = app_timer_create(&g_dhcp_timer, APP_TIMER_MODE_REPEATED, _DHCP_Time_Handler);
-    GL_ERROR_CHECK(err_code);
-
-    err_code = app_timer_start(g_dhcp_timer, APP_TIMER_TICKS(1000), NULL);
-    GL_ERROR_CHECK(err_code);
-
-    GL_LOG("DHCP INITIALIZED\n");
+    _timeout_timer_start();
 
     while (1)
     {
@@ -242,30 +260,23 @@ static ALWAYS_INLINE void _dhcp_net_init(void)
             nrf_delay_ms(5000);
             continue;
         }
-    }
-#else
-    // Can't get timers to work in bootloader for some reason, too lazy to debug,
-    // will just use a lazier implementation
 
-    nrf_delay_ms(6000);
-
-    while (1)
-    {
-        ret_code = DHCP_run();
-
-        if ( ret_code == DHCP_IP_LEASED )
+        if ( _timeout_timer_get_us() > TWO_SECONDS )
         {
-            GL_LOG("DHCP IP ASSIGNED\r\n");
-            break;
-        }
-        else if ( ret_code == DHCP_FAILED )
-        {
-            GL_LOG("DHCP FAILED, retrying in 5 seconds...\r\n");
-            nrf_delay_ms(5000);
+            GL_LOG("DHCP TIMEOUT, retrying...\r\n");
+
+            // Re-initialize DHCP
+            DHCP_init( DHCP_SOCK_NUM, g_recv_buf );
+
+            // restart timer
+            _timeout_timer_stop();
+            _timeout_timer_start();
+
             continue;
         }
     }
-#endif
+
+    _timeout_timer_stop();
 
     memset( &g_net_info, 0, sizeof(g_net_info) );
 
@@ -330,6 +341,154 @@ void LAN_Init(nrfx_gpiote_evt_handler_t isr_func)
     _print_net_info();
 
     GL_LOG("Ethernet initialized!\n");
+}
+
+/*
+ * FIXME: Doesn't actually use the hostname parameter, we probably arne't going to
+ *        ever change the hostname tho, so probably fine
+ */
+int16_t LAN_GetServerIPViaMDNS( hostname_t __attribute__((unused)) hostname,
+                                ipv4_addr_t* out_addr )
+{
+    int16_t err_code;
+
+    #if NEEDS_MUTEX
+    bool mutex_taken = _take_mutex();
+    #endif
+
+    // compose mdns packet...
+    uint32_t indx = 0;
+
+    // transaction ID
+    g_mdns_pkt_buf[indx++] = 0x01;  g_mdns_pkt_buf[indx++] = 0x02;
+
+    // flags
+    g_mdns_pkt_buf[indx++] = 0x00;  g_mdns_pkt_buf[indx++] = 0x00;
+
+    // number of questions
+    g_mdns_pkt_buf[indx++] = 0x00;  g_mdns_pkt_buf[indx++] = 0x01;
+
+    // number of answers
+    g_mdns_pkt_buf[indx++] = 0x00;  g_mdns_pkt_buf[indx++] = 0x00;
+
+    // number of authority records
+    g_mdns_pkt_buf[indx++] = 0x00;  g_mdns_pkt_buf[indx++] = 0x00;
+
+    // number of additional records
+    g_mdns_pkt_buf[indx++] = 0x00;  g_mdns_pkt_buf[indx++] = 0x00;
+
+    // add question
+
+    // split by dot
+    uint32_t section_len = 0;
+    uint32_t section_start_indx = 0;
+
+    for (uint32_t i = 0; i < MAX_HOSTNAME_CHARS; i++)
+    {
+        if ( (hostname.c[i] == '\0') || (hostname.c[i] == (char)0xFF) )
+        {
+            break;
+        }
+
+        if ( hostname.c[i] == '.' )
+        {
+            // End of the section
+
+            // Add the length of the section
+            g_mdns_pkt_buf[indx++] = section_len;
+
+            // Copy the section
+            memcpy( &g_mdns_pkt_buf[indx], &hostname.c[section_start_indx], section_len );
+            indx += section_len;
+
+            // Go on to the next section
+            section_len = 0;
+            section_start_indx = i + 1;
+        }
+        else
+        {
+            section_len++;
+        }
+    }
+
+    // End of name
+    g_mdns_pkt_buf[indx++] = 0x00;
+
+    // Type (A record)
+    g_mdns_pkt_buf[indx++] = 0x00;  g_mdns_pkt_buf[indx++] = 0x01;
+
+    // Class (IN)
+    g_mdns_pkt_buf[indx++] = 0x00;  g_mdns_pkt_buf[indx++] = 0x01;
+
+    uint32_t mdns_pkt_len = indx;
+
+
+    GL_LOG("creating mdns socket...\n");
+
+    // Needed for multicast sockets, set the multicast addr and port
+    setSn_DIPR(MDNS_SOCK_NUM, g_mdns_addr);
+    setSn_DPORT(MDNS_SOCK_NUM, MDNS_PORT);
+
+    err_code = socket( MDNS_SOCK_NUM, Sn_MR_UDP, MDNS_PORT, SF_MULTI_ENABLE );
+    require( err_code == MDNS_SOCK_NUM, exit );
+
+    GL_LOG("sending mDNS packet...\n");
+
+
+    err_code = sendto_mac( MDNS_SOCK_NUM,
+                           g_mdns_pkt_buf,
+                           mdns_pkt_len,
+                           g_multicast_mac_addr,
+                           g_mdns_addr,
+                           MDNS_PORT );
+    require( err_code > 0, exit );
+
+    GL_LOG("waiting for response...\n");
+
+    uint8_t  dst_ip[4];
+    uint16_t dst_port;
+
+    _timeout_timer_start();
+
+    while ( getSn_RX_RSR(MDNS_SOCK_NUM) == 0 )  // wait for response
+    {
+        if ( _timeout_timer_get_us() > TWO_SECONDS )
+        {
+            GL_LOG("mDNS TIMEOUT\n");
+
+            err_code = SOCKERR_TIMEOUT;
+            goto exit;
+        }
+    }
+
+    _timeout_timer_stop();
+
+    err_code = recvfrom( MDNS_SOCK_NUM,
+                         g_recv_buf,
+                         RECV_BUF_SIZE,
+                         &dst_ip[0],
+                         &dst_port );
+    require( err_code > 0, exit );
+
+    memcpy( out_addr->bytes, dst_ip, sizeof(dst_ip) );
+
+    err_code = close( MDNS_SOCK_NUM );
+    require( err_code > 0, exit );
+
+exit:
+    #if NEEDS_MUTEX
+    if ( mutex_taken )
+    {
+        _release_mutex();
+    }
+    #endif
+
+    if ( err_code < 0 )
+    {
+        GL_LOG("sock_err_code = %d\n", err_code);
+    }
+
+    return err_code;
 }
 
 int16_t LAN_Connect(sock_t sock, ipv4_addr_t addr, uint16_t port)
