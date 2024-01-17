@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 #include "gl_error.h"
 #include "macros.h"
 #include "nrf_delay.h"
@@ -22,6 +24,68 @@ static uint8_t g_rx_buf[ sizeof(DFU_ChunkMsg_t) ] __attribute__((aligned(4)));
 /*************************************************************
  * PRIVATE FUNCTIONS
  ************************************************************/
+static bool _try_connect_via_mdns(void)
+{
+    int32_t sock_err_code = 0;
+
+    for (uint8_t i = 0; i < NUM_FALLBACK_SERVERS; i++)
+    {
+        if ( Port_IsInvalid(gp_persistent_conf->server_port[i]) ||
+             Hostname_IsInvalid(gp_persistent_conf->server_hostname[i]) )
+        {
+            // go next
+            continue;
+        }
+
+        ipv4_addr_t mdns_addr;
+        sock_err_code = LAN_GetServerIPViaMDNS(gp_persistent_conf->server_hostname[i], &mdns_addr);
+
+        if ( sock_err_code <= 0 )
+        {
+            GL_LOG("Failed to resolve hostname %d, trying next...\n", i);
+            continue;
+        }
+
+        sock_err_code = LAN_Connect(DFU_SOCK_NUM, mdns_addr, DFU_SERVER_PORT);
+
+        if ( sock_err_code > 0 )
+        {
+            // Success
+            return 1;
+        }
+
+        GL_LOG("Failed to connect to server %d, trying next...\n", i);
+    }
+
+    return 0;
+}
+
+static bool _try_connect_via_raw_ip(void)
+{
+    int32_t sock_err_code = 0;
+
+    for (uint8_t i = 0; i < NUM_FALLBACK_SERVERS; i++)
+    {
+        if ( Port_IsInvalid(gp_persistent_conf->server_port[i]) ||
+             IPAddr_IsInvalid(gp_persistent_conf->server_ip_addr[i]) )
+        {
+            continue;
+        }
+
+        sock_err_code = LAN_Connect(DFU_SOCK_NUM, gp_persistent_conf->server_ip_addr[i], DFU_SERVER_PORT);
+
+        if ( sock_err_code > 0 )
+        {
+            // Success
+            return 1;
+        }
+
+        GL_LOG("Failed to connect to server %d, trying next...\n", i);
+    }
+
+    return 0;
+}
+
 static int32_t _nack_chunk(void)
 {
     DFU_OkMsg_t nack =
@@ -155,70 +219,27 @@ int main(void)
     GL_LOG("Connecting to dfu server...\n");
 
     ret_code_t err_code      = NRF_SUCCESS;
-    int        sock_err_code = 0;
+    int32_t    sock_err_code = 0;
 
     // Find a server to connect to
 
     // Try mDNS first
-    for (uint8_t i = 0; i < NUM_FALLBACK_SERVERS; i++)
+    if ( !_try_connect_via_mdns() )
     {
-        if ( Port_IsInvalid(gp_persistent_conf->server_port[i]) ||
-             Hostname_IsInvalid(gp_persistent_conf->server_hostname[i]) )
+        GL_LOG("Failed to connect via mDNS, trying raw IP addresses...\n");
+
+        // Try raw IP addresses if mDNS fails
+        if ( !_try_connect_via_raw_ip() )
         {
-            continue;
+            GL_LOG("Failed to connect to any server, aborting...\n");
+            goto err_handler;
         }
-
-        ipv4_addr_t mdns_addr;
-        sock_err_code = LAN_GetServerIPViaMDNS(gp_persistent_conf->server_hostname[i], &mdns_addr);
-
-        if ( sock_err_code <= 0 )
-        {
-            GL_LOG("Failed to resolve hostname %d, trying next...\n", i);
-            continue;
-        }
-
-        sock_err_code = LAN_Connect(DFU_SOCK_NUM, mdns_addr, DFU_SERVER_PORT);
-
-        if ( sock_err_code > 0 )
-        {
-            // Success
-            goto server_connected;
-        }
-
-        GL_LOG("Failed to connect to server %d, trying next...\n", i);
-    }
-
-    // Try raw IP addresses if mDNS fails
-    for (uint8_t i = 0; i < NUM_FALLBACK_SERVERS; i++)
-    {
-        if ( Port_IsInvalid(gp_persistent_conf->server_port[i]) ||
-             IPAddr_IsInvalid(gp_persistent_conf->server_ip_addr[i]) )
-        {
-            continue;
-        }
-
-        sock_err_code = LAN_Connect(DFU_SOCK_NUM, gp_persistent_conf->server_ip_addr[i], DFU_SERVER_PORT);
-
-        if ( sock_err_code > 0 )
-        {
-            // Success
-            goto server_connected;
-        }
-
-        GL_LOG("Failed to connect to server %d, trying next...\n", i);
-    }
-
-    if ( sock_err_code <= 0 )
-    {
-        GL_LOG("Failed to connect to any server, aborting...\n");
-        goto err_handler;
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     // Init DFU
-server_connected:
     err_code = DFU_Init();
     require_noerr(err_code, err_handler);
     //////////////////////////////////////////////////////////////////////////////////////////////////////
