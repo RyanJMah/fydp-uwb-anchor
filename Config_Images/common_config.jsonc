@@ -1,5 +1,5 @@
 {
-    "fw_update_pending": 1,
+    "fw_update_pending": 0,
 
     "socket_recv_timeout_ms": 5000,
 
@@ -16,9 +16,11 @@
         "GuidingLight._mqtt._tcp.local."
     ],
     "server_ip_addr": [
+        [192, 168, 1, 2],
         [192, 168, 8, 2]
     ],
     "server_port": [
+        1883,
         1883
     ]
 }

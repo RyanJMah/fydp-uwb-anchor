@@ -360,7 +360,7 @@ void LAN_Init(nrfx_gpiote_evt_handler_t isr_func)
  * FIXME: Doesn't actually use the hostname parameter, we probably arne't going to
  *        ever change the hostname tho, so probably fine
  */
-int16_t LAN_GetServerIPViaMDNS( hostname_t hostname __attribute__((unused))),
+int16_t LAN_GetServerIPViaMDNS( hostname_t __attribute__((unused)) hostname,
                                 ipv4_addr_t* out_addr )
 {
     int16_t err_code;
