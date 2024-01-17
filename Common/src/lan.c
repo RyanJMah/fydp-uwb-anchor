@@ -35,6 +35,7 @@
 
 #define RECV_BUF_SIZE                   ( 1024*2 )
 
+#define MDNS_PKT_BUF_SIZE               ( 512 )
 #define MDNS_PORT                       ( 5353 )
 #define MDNS_ADDR                       { 224, 0, 0, 251 }
 #define MULTICAST_MAC_ADDR              { 0x01, 0x00, 0x5e, 0x00, 0x00, 0xfb }
@@ -56,23 +57,9 @@ static osMutexDef(g_lan_mutex);     // Declare mutex
 static osMutexId (g_lan_mutex_id);  // Mutex ID
 #endif
 
-static uint8_t g_mdns_addr[] = MDNS_ADDR;
+static uint8_t g_mdns_pkt_buf[MDNS_PKT_BUF_SIZE];
 
-static uint8_t g_hardcoded_mdns_pkt[] =
-{
-    0x01, 0x02,
-    0x00, 0x00,
-    0x00, 0x01,
-    0x00, 0x00,
-    0x00, 0x00,
-    0x00, 0x00,
-    0x0c, 'G', 'u', 'i', 'd', 'i', 'n', 'g', 'L', 'i', 'g', 'h', 't',
-    0x05, '_', 'm', 'q', 't', 't',
-    0x04, '_', 't', 'c', 'p',
-    0x05, 'l', 'o', 'c', 'a', 'l', 0x00,
-    0x00, 0x01,
-    0x00, 0x01,
-};
+static uint8_t g_mdns_addr[]          = MDNS_ADDR;
 static uint8_t g_multicast_mac_addr[] = MULTICAST_MAC_ADDR;
 
 
@@ -369,6 +356,73 @@ int16_t LAN_GetServerIPViaMDNS( hostname_t __attribute__((unused)) hostname,
     bool mutex_taken = _take_mutex();
     #endif
 
+    // compose mdns packet...
+    uint32_t indx = 0;
+
+    // transaction ID
+    g_mdns_pkt_buf[indx++] = 0x01;  g_mdns_pkt_buf[indx++] = 0x02;
+
+    // flags
+    g_mdns_pkt_buf[indx++] = 0x00;  g_mdns_pkt_buf[indx++] = 0x00;
+
+    // number of questions
+    g_mdns_pkt_buf[indx++] = 0x00;  g_mdns_pkt_buf[indx++] = 0x01;
+
+    // number of answers
+    g_mdns_pkt_buf[indx++] = 0x00;  g_mdns_pkt_buf[indx++] = 0x00;
+
+    // number of authority records
+    g_mdns_pkt_buf[indx++] = 0x00;  g_mdns_pkt_buf[indx++] = 0x00;
+
+    // number of additional records
+    g_mdns_pkt_buf[indx++] = 0x00;  g_mdns_pkt_buf[indx++] = 0x00;
+
+    // add question
+
+    // split by dot
+    uint32_t section_len = 0;
+    uint32_t section_start_indx = 0;
+
+    for (uint32_t i = 0; i < MAX_HOSTNAME_CHARS; i++)
+    {
+        if ( (hostname.c[i] == '\0') || (hostname.c[i] == (char)0xFF) )
+        {
+            break;
+        }
+
+        if ( hostname.c[i] == '.' )
+        {
+            // End of the section
+
+            // Add the length of the section
+            g_mdns_pkt_buf[indx++] = section_len;
+
+            // Copy the section
+            memcpy( &g_mdns_pkt_buf[indx], &hostname.c[section_start_indx], section_len );
+            indx += section_len;
+
+            // Go on to the next section
+            section_len = 0;
+            section_start_indx = i + 1;
+        }
+        else
+        {
+            section_len++;
+        }
+    }
+
+    // End of name
+    g_mdns_pkt_buf[indx++] = 0x00;
+
+    // Type (A record)
+    g_mdns_pkt_buf[indx++] = 0x00;  g_mdns_pkt_buf[indx++] = 0x01;
+
+    // Class (IN)
+    g_mdns_pkt_buf[indx++] = 0x00;  g_mdns_pkt_buf[indx++] = 0x01;
+
+    uint32_t mdns_pkt_len = indx;
+
+
     GL_LOG("creating mdns socket...\n");
 
     // Needed for multicast sockets, set the multicast addr and port
@@ -382,11 +436,11 @@ int16_t LAN_GetServerIPViaMDNS( hostname_t __attribute__((unused)) hostname,
 
 
     err_code = sendto_mac( MDNS_SOCK_NUM,
-                            g_hardcoded_mdns_pkt,
-                            sizeof(g_hardcoded_mdns_pkt),
-                            g_multicast_mac_addr,
-                            g_mdns_addr,
-                            MDNS_PORT );
+                           g_mdns_pkt_buf,
+                           mdns_pkt_len,
+                           g_multicast_mac_addr,
+                           g_mdns_addr,
+                           MDNS_PORT );
     require( err_code > 0, exit );
 
     GL_LOG("waiting for response...\n");

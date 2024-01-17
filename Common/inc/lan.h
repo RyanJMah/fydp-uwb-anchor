@@ -48,7 +48,7 @@ int32_t LAN_Recv(sock_t sock, uint8_t* out_data, uint32_t len);
 static ALWAYS_INLINE uint8_t Hostname_IsInvalid(hostname_t hostname)
 {
     // First character is 0xFF
-    return (hostname.c[0] == 0xFF);
+    return ( hostname.c[0] == (char)0xFF );
 }
 
 static ALWAYS_INLINE uint8_t IPAddr_IsInvalid(ipv4_addr_t addr)
