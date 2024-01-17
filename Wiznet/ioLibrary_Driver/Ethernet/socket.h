@@ -298,6 +298,39 @@ int32_t sendto(uint8_t sn, uint8_t * buf, uint16_t len, uint8_t * addr, uint16_t
 
 /**
  * @ingroup WIZnet_socket_APIs
+ * @brief	Sends datagram to the peer with destination IP address, destination mac address, and port number passed as parameter.
+ * @details It sends datagram of UDP or MACRAW to the peer with destination IP address and port number passed as parameter.\n
+ *          Even if the connectionless socket has been previously connected to a specific address,
+ *          the address and port number parameters override the destination address for that particular datagram only.
+ * @note    In block io mode, It doesn't return until data send is completed - socket buffer size is greater than <I>len</I>.
+ *          In non-block io mode, It return @ref SOCK_BUSY immediately when socket buffer is not enough.
+ *
+ * @param sn    Socket number. It should be <b>0 ~ @ref \_WIZCHIP_SOCK_NUM_</b>.
+ * @param buf   Pointer buffer to send outgoing data.
+ * @param len   The byte length of data in buf.
+ * @param addr  Pointer variable of destination IP address. It should be allocated 4 bytes.
+ * @param port  Destination port number.
+ *
+ * @return @b Success : The sent data size \n
+ *         @b Fail    :\n @ref SOCKERR_SOCKNUM     - Invalid socket number \n
+ *                        @ref SOCKERR_SOCKMODE    - Invalid operation in the socket \n
+ *                        @ref SOCKERR_SOCKSTATUS  - Invalid socket status for socket operation \n
+ *                        @ref SOCKERR_DATALEN     - zero data length \n
+ *                        @ref SOCKERR_IPINVALID   - Wrong server IP address\n
+ *                        @ref SOCKERR_PORTZERO    - Server port zero\n
+ *                        @ref SOCKERR_SOCKCLOSED  - Socket unexpectedly closed \n
+ *                        @ref SOCKERR_TIMEOUT     - Timeout occurred \n
+ *                        @ref SOCK_BUSY           - Socket is busy. 
+ */
+int32_t sendto_mac( uint8_t sn,
+                    uint8_t* buf,
+                    uint16_t len,
+                    uint8_t* mac_addr,
+                    uint8_t* ip_addr,
+                    uint16_t port );
+
+/**
+ * @ingroup WIZnet_socket_APIs
  * @brief Receive datagram of UDP or MACRAW
  * @details This function is an application I/F function which is used to receive the data in other then TCP mode. \n
  *          This function is used to receive UDP and MAC_RAW mode, and handle the header as well. 

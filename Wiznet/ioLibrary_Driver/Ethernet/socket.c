@@ -448,7 +448,12 @@ int32_t recv(uint8_t sn, uint8_t * buf, uint16_t len)
     return (int32_t)len;
 }
 
-int32_t sendto(uint8_t sn, uint8_t * buf, uint16_t len, uint8_t * addr, uint16_t port)
+static int32_t _sendto_generic( uint8_t sn,
+                                uint8_t * buf,
+                                uint16_t len,
+                                uint8_t* mac_addr,
+                                uint8_t* addr,  // ip address
+                                uint16_t port )
 {
     uint8_t tmp = 0;
     uint16_t freesize = 0;
@@ -507,8 +512,17 @@ int32_t sendto(uint8_t sn, uint8_t * buf, uint16_t len, uint8_t * addr, uint16_t
 #if _WIZCHIP_ == 5300
     setSn_TX_WRSR(sn, len);
 #endif
-//    
-	setSn_CR(sn,Sn_CR_SEND);
+
+    if ( mac_addr != NULL )
+    {
+        setSn_DHAR(sn, mac_addr);
+        setSn_CR(sn, Sn_CR_SEND_MAC);
+    }
+    else
+    {
+        setSn_CR(sn,Sn_CR_SEND);
+    }
+
 	/* wait to process the command... */
 	while(getSn_CR(sn));
     while(1)
@@ -540,6 +554,21 @@ int32_t sendto(uint8_t sn, uint8_t * buf, uint16_t len, uint8_t * addr, uint16_t
     //M20150409 : Explicit Type Casting
     //return len;
     return (int32_t)len;
+}
+
+int32_t sendto(uint8_t sn, uint8_t * buf, uint16_t len, uint8_t * addr, uint16_t port)
+{
+    return _sendto_generic(sn, buf, len, NULL, addr, port);
+}
+
+int32_t sendto_mac( uint8_t sn,
+                    uint8_t* buf,
+                    uint16_t len,
+                    uint8_t* mac_addr,
+                    uint8_t* ip_addr,
+                    uint16_t port )
+{
+    return _sendto_generic(sn, buf, len, mac_addr, ip_addr, port);
 }
 
 

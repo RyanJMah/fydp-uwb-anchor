@@ -62,7 +62,8 @@ static osMutexId (g_lan_mutex_id);  // Mutex ID
 
 static uint8_t g_mdns_addr[] = MDNS_ADDR;
 
-static uint8_t g_hardcoded_mdns_pkt[] = {
+static uint8_t g_hardcoded_mdns_pkt[] =
+{
     0x01, 0x02,
     0x00, 0x00,
     0x00, 0x01,
@@ -76,6 +77,11 @@ static uint8_t g_hardcoded_mdns_pkt[] = {
     0x00, 0x01,
     0x00, 0x01,
     // 0x00
+};
+
+static uint8_t g_multicast_mac_addr[] =
+{
+    0x01, 0x00, 0x5e, 0x00, 0x00, 0xfb
 };
 
 // static uint8_t g_hardcoded_mdns_pkt[] =
@@ -408,11 +414,12 @@ int16_t LAN_GetServerIPViaMDNS(hostname_t hostname, ipv4_addr_t* out_addr)
     GL_LOG("sending mDNS packet...\n");
 
 
-    err_code = sendto( MDNS_SOCK_NUM,
-                       g_hardcoded_mdns_pkt,
-                       sizeof(g_hardcoded_mdns_pkt),
-                       g_mdns_addr,
-                       MDNS_PORT );
+    err_code = sendto_mac( MDNS_SOCK_NUM,
+                            g_hardcoded_mdns_pkt,
+                            sizeof(g_hardcoded_mdns_pkt),
+                            g_multicast_mac_addr,
+                            g_mdns_addr,
+                            MDNS_PORT );
     require( err_code > 0, exit );
 
     GL_LOG("waiting for response...\n");
