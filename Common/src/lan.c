@@ -407,6 +407,8 @@ int16_t LAN_GetServerIPViaMDNS( hostname_t __attribute__((unused)) hostname,
         }
     }
 
+    _timeout_timer_stop();
+
     err_code = recvfrom( MDNS_SOCK_NUM,
                          g_recv_buf,
                          RECV_BUF_SIZE,
