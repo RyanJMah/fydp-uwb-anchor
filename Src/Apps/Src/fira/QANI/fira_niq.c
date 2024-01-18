@@ -195,23 +195,23 @@ static float convert_aoa_2pi_q16_to_deg(int16_t aoa_2pi_q16)
  * */
 #if 1
 static void report_cb(const struct ranging_results *results, void *user_data) {
-    struct ranging_measurements *rm;
+    // struct ranging_measurements *rm;
 
-    if (results->stopped_reason != 0xFF)
-    {
-        return;
-    }
+    // if (results->stopped_reason != 0xFF)
+    // {
+    //     return;
+    // }
 
-    for (int i = 0; i < results->n_measurements; i++) 
-    {
-        rm = (struct ranging_measurements *)&results->measurements[i];
+    // for (int i = 0; i < results->n_measurements; i++) 
+    // {
+    //     rm = (struct ranging_measurements *)&results->measurements[i];
 
-        MqttRetCode_t err_code = TelemetryData_Publish(rm);
-        if ( err_code != MQTT_OK )
-        {
-            GL_LOG("TelemetryData_Publish FAILED: err_code=%d\n", err_code);
-        }
-    }
+    //     MqttRetCode_t err_code = TelemetryData_Publish(rm);
+    //     if ( err_code != MQTT_OK )
+    //     {
+    //         GL_LOG("TelemetryData_Publish FAILED: err_code=%d\n", err_code);
+    //     }
+    // }
 }
 #endif
 
