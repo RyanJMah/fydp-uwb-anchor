@@ -49,7 +49,7 @@
  *
  */
 
-const char BoardName_Fmt[]    = "GL_Anchor_%u";
+const char BoardName_Fmt[]    = "GuidingLite_DemoAnchor_%u";
 
 char BoardName[sizeof(BoardName_Fmt) + 10] = {0};
 const char OsName[]          = "FreeRTOS";
