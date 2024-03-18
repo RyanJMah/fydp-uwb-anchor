@@ -124,7 +124,7 @@ static ALWAYS_INLINE void _init_mqtt(void)
 
     // Initialize MQTT
     MqttRetCode_t err_code;
-    
+
     err_code = MqttClient_Init();
 
     if ( err_code != MQTT_OK )

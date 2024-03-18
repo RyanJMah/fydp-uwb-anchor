@@ -1,6 +1,6 @@
 /**
  * @file      main.c
- * 
+ *
  * @brief     Implementation of the Qorvo Apple Nearby Interaction example
  *
  * @author    Decawave Applications
@@ -45,7 +45,7 @@
  *  ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 
 #include <stdint.h>
@@ -155,7 +155,7 @@ int main(void) {
     // Create Default task: it responsible for WDT and starting of "applications"
     AppConfigInit(); /**< load the RAM Configuration parameters from NVM block */
 
-    // Start BLE 
+    // Start BLE
     char advertising_name[32];
 
     // snprintf(advertising_name, sizeof(advertising_name), "%s (%08X)", (char*)BoardName, (unsigned int)NRF_FICR->DEVICEADDR[0]);
